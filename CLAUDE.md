@@ -163,3 +163,26 @@ adb logcat | grep -i "com.home.library"
 - Room은 lazy 초기화. DAO를 최소 1회 호출해야 SeedCallback.onCreate가 실행된다.
 - 시드 재검증이 필요하면 앱 데이터 삭제 후 재실행(onCreate는 DB 최초 생성 시 1회만).
 - 화면 표시·바코드 물리 스캔·카메라 권한 승인 등 **육안/물리 확인은 사용자(사람)가 수행**한다. 에이전트는 코드·빌드·로그 분석까지 담당.
+
+-----
+
+## 진행 상태
+
+_최종 갱신: 2026-07-12_
+
+### ✅ 1단계 — 프로젝트 골격 + Room 스키마 + 시드 (완료)
+
+- Entity 5(USERS/BOOKS/LOANS/LOAN_HISTORY/APP_CONFIG), DAO 5, `AppDatabase`(v1), `SeedCallback`, `DatabaseModule`(Hilt), `PasswordHasher`(BCrypt cost 12), `ConfigKeys`, Enums, `Converters`(enum↔name) 구현.
+- `BookDao.decreaseAvailable`(`WHERE available_qty > 0`) / `increaseAvailable`(`WHERE available_qty < total_qty`) 조건부 SQL 반영. `LoanHistoryDao`는 append-only.
+- 빌드 검증: `./gradlew assembleDebug` **BUILD SUCCESSFUL**. `app/schemas/.../1.json` 생성(5개 테이블 확인).
+- 빌드 환경 확정: Kotlin 2.0.21 / KSP 2.0.21-1.0.28 / AGP 8.11.2 / Gradle 8.13 / compileSdk·targetSdk 36 / minSdk 26 / JVM 17. Room 2.6.1, Hilt 2.52, at.favre.lib:bcrypt 0.10.2.
+- 형상관리: git init(`main`) → 커밋 2건 → GitHub push 완료. 원격 `https://github.com/chp320/HomeLibrary.git`.
+  - `4f47618 feat(db): Room 스키마 및 시드 데이터 구성`
+  - `9a5e926 chore: LF 줄바꿈 정규화(.gitattributes)`
+- **런타임 미검증 항목(실기기 필요)**: admin 시드 1건 + app_config 6건은 DAO 최초 호출 시 생성됨. 아직 DAO를 호출하는 화면이 없어 눈으로 확인되지 않음 → 2단계 로그인 조회 시 자연 검증 예정.
+
+### ⏭️ 다음: 2단계 — 인증 (가입/로그인/5분 자동 로그아웃) 착수 예정
+
+- 커버 요건: AUTH-001~004, AUTH-006, SCR-02, SCR-03
+- 착수 시 정할 것: AuthRepository/SessionManager/SessionTimeoutHandler 구조, MainActivity 활동시각 갱신 방식.
+- 이 과정에서 1단계 시드(admin/app_config) 런타임 검증을 겸함.
