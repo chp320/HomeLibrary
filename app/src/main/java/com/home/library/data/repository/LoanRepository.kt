@@ -12,6 +12,9 @@ import com.home.library.data.local.enums.BookStatus
 import com.home.library.data.local.enums.LoanAction
 import com.home.library.data.local.enums.LoanStatus
 import com.home.library.data.local.view.ActiveLoanView
+import com.home.library.data.local.view.AdminLoanView
+import com.home.library.data.local.view.BookLoanHistoryView
+import com.home.library.data.local.view.LoanHistoryRecord
 import com.home.library.loan.LoanCheck
 import com.home.library.loan.LoanPolicy
 import com.home.library.loan.LoanValidator
@@ -36,8 +39,26 @@ class LoanRepository @Inject constructor(
     private val validator: LoanValidator,
 ) {
 
-    /** 사용자의 활성 대출 목록(반납 화면 / 6단계 현황 공용). */
+    /** 사용자의 활성 대출 목록(반납 화면 / 내 대출 현황 공용). */
     fun activeLoans(userId: Long): Flow<List<ActiveLoanView>> = loanDao.getActiveLoansByUser(userId)
+
+    /** 내 대출 이력(도서명·기간 필터 + 페이징). HIST-002. */
+    suspend fun userLoanHistory(
+        userId: Long,
+        bookQuery: String,
+        fromDate: Long,
+        toDate: Long,
+        limit: Int,
+        offset: Int,
+    ): List<LoanHistoryRecord> =
+        loanDao.getUserLoanHistory(userId, bookQuery.trim(), fromDate, toDate, limit, offset)
+
+    /** 관리자 전체 활성 대출 현황. SCR-13. */
+    fun allActiveLoans(): Flow<List<AdminLoanView>> = loanDao.getAllActiveLoans()
+
+    /** 도서별 대출 이력(append-only LOAN_HISTORY). BOOK-008. */
+    fun bookLoanHistory(bookId: Long): Flow<List<BookLoanHistoryView>> =
+        loanHistoryDao.getByBook(bookId)
 
     suspend fun loan(userId: Long, bookId: Long): LoanResult = db.withTransaction {
         val book = bookDao.getById(bookId)

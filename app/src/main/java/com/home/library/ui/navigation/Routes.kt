@@ -41,4 +41,23 @@ object Routes {
 
     /** 반납(SCR-08). 로그인 필요. */
     const val RETURN = "return"
+
+    /** 내 대출(현황+이력, SCR-09). 로그인 필요. */
+    const val MY_LOAN = "myLoan"
+
+    /** 관리자 홈(SCR-10). 관리자 전용. */
+    const val ADMIN_HOME = "adminHome"
+
+    /** 관리자 전체 대출 현황(SCR-13). 관리자 전용. */
+    const val ADMIN_LOAN_STATUS = "adminLoanStatus"
+
+    /** 사용자 관리 목록(SCR-12). 관리자 전용. */
+    const val USER_LIST = "userList"
+
+    /** 사용자 등록/수정. userId 미지정(-1)=등록, 지정=수정. 관리자 전용. */
+    const val USER_EDIT_ARG_ID = "userId"
+    const val USER_EDIT_NEW_ID = -1L
+    const val USER_EDIT = "userEdit?userId={$USER_EDIT_ARG_ID}"
+    const val USER_EDIT_PREFIX = "userEdit"
+    fun userEdit(userId: Long = USER_EDIT_NEW_ID): String = "userEdit?userId=$userId"
 }

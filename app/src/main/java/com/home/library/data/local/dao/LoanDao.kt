@@ -6,6 +6,8 @@ import androidx.room.Query
 import androidx.room.Update
 import com.home.library.data.local.entity.LoanEntity
 import com.home.library.data.local.view.ActiveLoanView
+import com.home.library.data.local.view.AdminLoanView
+import com.home.library.data.local.view.LoanHistoryRecord
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -58,4 +60,43 @@ interface LoanDao {
         """,
     )
     fun getActiveLoansByUser(userId: Long): Flow<List<ActiveLoanView>>
+
+    /**
+     * 내 대출 이력(반납 완료 포함). 도서명 부분일치 + 대출일 기간 필터 + 페이징(LIMIT/OFFSET). HIST-002.
+     * fromDate/toDate는 열린 경계를 0 / Long.MAX_VALUE로 넘긴다.
+     */
+    @Query(
+        """
+        SELECT l.loan_id AS loanId, b.title AS bookTitle, l.loan_date AS loanDate,
+               l.due_date AS dueDate, l.return_date AS returnDate, l.status AS status
+        FROM loans l JOIN books b ON l.book_id = b.book_id
+        WHERE l.user_id = :userId
+          AND (:bookQuery = '' OR b.title LIKE '%' || :bookQuery || '%')
+          AND l.loan_date >= :fromDate AND l.loan_date <= :toDate
+        ORDER BY l.loan_date DESC
+        LIMIT :limit OFFSET :offset
+        """,
+    )
+    suspend fun getUserLoanHistory(
+        userId: Long,
+        bookQuery: String,
+        fromDate: Long,
+        toDate: Long,
+        limit: Int,
+        offset: Int,
+    ): List<LoanHistoryRecord>
+
+    /** 관리자 전체 활성 대출 현황(도서·대출자명). SCR-13. */
+    @Query(
+        """
+        SELECT l.loan_id AS loanId, b.title AS bookTitle, u.name AS borrowerName,
+               l.due_date AS dueDate, l.status AS status
+        FROM loans l
+          JOIN books b ON l.book_id = b.book_id
+          JOIN users u ON l.user_id = u.user_id
+        WHERE l.status IN ('LOANED', 'OVERDUE')
+        ORDER BY l.due_date ASC
+        """,
+    )
+    fun getAllActiveLoans(): Flow<List<AdminLoanView>>
 }

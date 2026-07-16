@@ -11,6 +11,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -30,6 +31,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.home.library.R
 import com.home.library.data.local.enums.BookStatus
+import com.home.library.data.local.enums.LoanAction
+import com.home.library.ui.loan.formatDate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,6 +45,7 @@ fun BookDetailScreen(
     viewModel: BookDetailViewModel = hiltViewModel(),
 ) {
     val state by viewModel.ui.collectAsState()
+    val history by viewModel.history.collectAsState()
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var showLoanBlock by remember { mutableStateOf(false) }
 
@@ -126,6 +130,25 @@ fun BookDetailScreen(
                     ) { Text(stringResource(R.string.common_delete)) }
                 }
             }
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            Text(
+                text = stringResource(R.string.book_loan_history_title),
+                style = MaterialTheme.typography.titleMedium,
+            )
+            if (history.isEmpty()) {
+                Text(
+                    text = stringResource(R.string.book_loan_history_empty),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            } else {
+                history.forEach { h ->
+                    Text(
+                        text = "${formatDate(h.actionAt)} · ${loanActionLabel(h.action)} · ${h.actorName}",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+            }
         }
     }
 
@@ -173,4 +196,12 @@ private fun InfoRow(label: String, value: String?) {
         )
         Text(text = value, style = MaterialTheme.typography.bodyMedium)
     }
+}
+
+@Composable
+private fun loanActionLabel(action: LoanAction): String = when (action) {
+    LoanAction.LOAN -> stringResource(R.string.loan_action_loan)
+    LoanAction.RETURN -> stringResource(R.string.loan_action_return)
+    LoanAction.EXTEND -> stringResource(R.string.loan_action_extend)
+    LoanAction.FORCE_RETURN -> stringResource(R.string.loan_action_force_return)
 }

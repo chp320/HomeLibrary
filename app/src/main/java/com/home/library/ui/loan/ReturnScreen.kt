@@ -27,8 +27,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.home.library.R
 import com.home.library.data.local.enums.LoanStatus
 import com.home.library.data.local.view.ActiveLoanView
-import java.time.Instant
-import java.time.ZoneId
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -110,18 +108,3 @@ private fun ReturnRow(loan: ActiveLoanView, onReturn: () -> Unit) {
         }
     }
 }
-
-private const val DAY_MS = 24L * 60 * 60 * 1000
-
-@Composable
-private fun remainingText(dueDate: Long, now: Long, overdue: Boolean): String =
-    if (overdue) {
-        val days = ((now - dueDate) / DAY_MS).toInt().coerceAtLeast(0)
-        stringResource(R.string.return_overdue, days)
-    } else {
-        val days = ((dueDate - now) / DAY_MS).toInt()
-        if (days <= 0) stringResource(R.string.return_dday_today) else stringResource(R.string.return_dday, days)
-    }
-
-private fun formatDate(epochMillis: Long): String =
-    Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault()).toLocalDate().toString()

@@ -9,9 +9,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -21,6 +24,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -38,6 +44,8 @@ fun BookListScreen(
     onNavigateScan: () -> Unit,
     onNavigateLoan: () -> Unit,
     onNavigateReturn: () -> Unit,
+    onNavigateMyLoan: () -> Unit,
+    onNavigateAdmin: () -> Unit,
     onNavigateLogin: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: BookListViewModel = hiltViewModel(),
@@ -50,20 +58,20 @@ fun BookListScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.book_list_title)) },
                 actions = {
-                    if (state.isAdmin) {
-                        TextButton(onClick = onNavigateScan) {
-                            Text(stringResource(R.string.book_scan_register))
-                        }
-                    }
                     if (state.isLoggedIn) {
-                        TextButton(onClick = onNavigateLoan) {
-                            Text(stringResource(R.string.loan_title))
+                        var menuOpen by remember { mutableStateOf(false) }
+                        IconButton(onClick = { menuOpen = true }) {
+                            Text("⋮", style = MaterialTheme.typography.titleLarge)
                         }
-                        TextButton(onClick = onNavigateReturn) {
-                            Text(stringResource(R.string.return_title))
-                        }
-                        TextButton(onClick = viewModel::logout) {
-                            Text(stringResource(R.string.common_logout))
+                        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                            MenuItem(stringResource(R.string.my_loan_title)) { menuOpen = false; onNavigateMyLoan() }
+                            MenuItem(stringResource(R.string.loan_title)) { menuOpen = false; onNavigateLoan() }
+                            MenuItem(stringResource(R.string.return_title)) { menuOpen = false; onNavigateReturn() }
+                            if (state.isAdmin) {
+                                MenuItem(stringResource(R.string.book_scan_register)) { menuOpen = false; onNavigateScan() }
+                                MenuItem(stringResource(R.string.admin_home_title)) { menuOpen = false; onNavigateAdmin() }
+                            }
+                            MenuItem(stringResource(R.string.common_logout)) { menuOpen = false; viewModel.logout() }
                         }
                     } else {
                         TextButton(onClick = onNavigateLogin) {
@@ -151,6 +159,11 @@ fun BookListScreen(
             }
         }
     }
+}
+
+@Composable
+private fun MenuItem(label: String, onClick: () -> Unit) {
+    DropdownMenuItem(text = { Text(label) }, onClick = onClick)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

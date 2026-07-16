@@ -15,10 +15,15 @@ import com.home.library.session.SessionState
 import com.home.library.ui.auth.changepw.ChangePasswordScreen
 import com.home.library.ui.auth.login.LoginScreen
 import com.home.library.ui.auth.signup.SignUpScreen
+import com.home.library.ui.admin.AdminHomeScreen
+import com.home.library.ui.admin.AdminLoanStatusScreen
+import com.home.library.ui.admin.UserEditScreen
+import com.home.library.ui.admin.UserListScreen
 import com.home.library.ui.book.detail.BookDetailScreen
 import com.home.library.ui.book.edit.BookEditScreen
 import com.home.library.ui.book.list.BookListScreen
 import com.home.library.ui.loan.LoanScreen
+import com.home.library.ui.loan.MyLoanScreen
 import com.home.library.ui.loan.ReturnScreen
 import com.home.library.ui.scan.ScanScreen
 
@@ -65,7 +70,47 @@ fun AppNavHost(
                 onNavigateScan = { navController.navigate(Routes.SCAN) },
                 onNavigateLoan = { navController.navigate(Routes.loan()) },
                 onNavigateReturn = { navController.navigate(Routes.RETURN) },
+                onNavigateMyLoan = { navController.navigate(Routes.MY_LOAN) },
+                onNavigateAdmin = { navController.navigate(Routes.ADMIN_HOME) },
                 onNavigateLogin = { navController.navigate(Routes.LOGIN) },
+            )
+        }
+        composable(Routes.MY_LOAN) {
+            MyLoanScreen(
+                onNavigateReturn = { navController.navigate(Routes.RETURN) },
+                onNavigateLogin = { navController.navigate(Routes.LOGIN) },
+                onBack = { navController.popBackStack() },
+            )
+        }
+        composable(Routes.ADMIN_HOME) {
+            AdminHomeScreen(
+                onNavigateUsers = { navController.navigate(Routes.USER_LIST) },
+                onNavigateLoanStatus = { navController.navigate(Routes.ADMIN_LOAN_STATUS) },
+                onBack = { navController.popBackStack() },
+            )
+        }
+        composable(Routes.ADMIN_LOAN_STATUS) {
+            AdminLoanStatusScreen(onBack = { navController.popBackStack() })
+        }
+        composable(Routes.USER_LIST) {
+            UserListScreen(
+                onAddUser = { navController.navigate(Routes.userEdit()) },
+                onEditUser = { id -> navController.navigate(Routes.userEdit(id)) },
+                onBack = { navController.popBackStack() },
+            )
+        }
+        composable(
+            route = Routes.USER_EDIT,
+            arguments = listOf(
+                navArgument(Routes.USER_EDIT_ARG_ID) {
+                    type = NavType.LongType
+                    defaultValue = Routes.USER_EDIT_NEW_ID
+                },
+            ),
+        ) {
+            UserEditScreen(
+                onDone = { navController.popBackStack() },
+                onBack = { navController.popBackStack() },
             )
         }
         composable(Routes.SCAN) {
@@ -153,5 +198,10 @@ fun AppNavHost(
 private fun String.isLoginRequired(): Boolean =
     this == Routes.SCAN ||
         this == Routes.RETURN ||
+        this == Routes.MY_LOAN ||
+        this == Routes.ADMIN_HOME ||
+        this == Routes.ADMIN_LOAN_STATUS ||
+        this == Routes.USER_LIST ||
         startsWith(Routes.BOOK_EDIT_PREFIX) ||
-        startsWith(Routes.LOAN_PREFIX)
+        startsWith(Routes.LOAN_PREFIX) ||
+        startsWith(Routes.USER_EDIT_PREFIX)

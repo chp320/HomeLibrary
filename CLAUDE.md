@@ -251,7 +251,16 @@ _최종 갱신: 2026-07-17_
 
 - **ISBN-10 입력 지원**: 옛날 책(1970~2006, ISBN-10만 보유) 등록 불가 결함 수정. 유효 ISBN-10을 ISBN-13으로 자동 변환 저장(설계 원칙 11). `X`(=10) 체크디지트 처리 포함. 카카오 조회는 13자리 0건 && 978 접두 시 원본 ISBN-10로 1회 폴백. 변환 로직은 `BookFormValidatorTest` 유닛 테스트로 고정(`097522980X→9780975229804` 등).
 
-### ⏭️ 다음: 6단계 — 이력 조회 + 관리자 기능 착수 예정
+### ✅ 6단계 — 이력 조회 + 관리자 기능 (완료)
 
-- 커버 요건: HIST-001~004, USER-001~004, SCR-09, SCR-10, SCR-12, SCR-13.
-- 착수 시 계획을 먼저 제시하고 확인받는다.
+- 커버 요건: HIST-001~004, USER-001~004, SCR-09/10/12/13. + BOOK-008(도서 상세 대출 이력, 3단계 미완분 완료).
+- 데이터(스키마 불변): 프로젝션 `LoanHistoryRecord`·`AdminLoanView`·`BookLoanHistoryView`·`UserListItem`. `LoanDao`(내 이력 도서명·기간 필터+LIMIT/OFFSET 페이징, 전체 활성대출 JOIN), `LoanHistoryDao.getByBook`(append-only select), `UserDao.searchUsers`(검색+권한/상태 필터+대출중 권수 서브쿼리). ※ `action`은 SQLite 예약어라 별칭 없이 컬럼명 그대로 사용.
+- 도메인: `UserRepository`(생성=임시비번+pwd_change_required, 수정=loginId 불변·비번 공백 시 기존 해시 유지, 비활성화=대출중 차단). 검증은 `AuthValidator` 재사용. 강제변경 재사용 차단은 `changePassword`가 현재 해시와 대조(일반화됨, 무수정).
+- UI: `MyLoanScreen`(현황/이력 탭, 현황→반납하기 경로, 이력 필터·더보기 페이징), `AdminHomeScreen`, `UserListScreen`(검색·필터·대출중 권수), `UserEditScreen`, `AdminLoanStatusScreen`. `BookDetailScreen`에 대출 이력 추가. 상단바 오버플로 메뉴(⋮).
+- 권한 가드: 관리자 화면 진입점 숨김 + ViewModel isAdmin 이중 방어.
+- 빌드 검증: `./gradlew :app:assembleDebug` **BUILD SUCCESSFUL**. 실기기 DoD 검증 후 커밋.
+
+### ⏭️ 다음: UX 개선(별도 style 커밋) → 이후 7단계
+
+- UX: 앱 아이콘(적응형·벡터), 상단 메뉴 텍스트버튼, 도서 상세/목록 표지 이미지, 뒤로가기 아이콘.
+- 7단계: LOAN-004(바코드 반납)·LOAN-005(연장)·LOAN-007(강제반납)·CMN-003·CMN-004·HIST-005·AUTH-006·BOOK-009 + ProGuard·release·다크모드. **4단계 USB-C HID 스캐너 실물 테스트도 이 시점까지 보류 중.**

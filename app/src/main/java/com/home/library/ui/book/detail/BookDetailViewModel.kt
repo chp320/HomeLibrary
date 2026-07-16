@@ -5,8 +5,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.home.library.data.local.entity.BookEntity
 import com.home.library.data.local.enums.UserRole
+import com.home.library.data.local.view.BookLoanHistoryView
 import com.home.library.data.repository.BookRepository
 import com.home.library.data.repository.DiscardResult
+import com.home.library.data.repository.LoanRepository
 import com.home.library.session.SessionManager
 import com.home.library.session.SessionState
 import com.home.library.ui.navigation.Routes
@@ -22,12 +24,18 @@ import javax.inject.Inject
 @HiltViewModel
 class BookDetailViewModel @Inject constructor(
     private val bookRepository: BookRepository,
+    loanRepository: LoanRepository,
     sessionManager: SessionManager,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
     private val bookId: Long = savedStateHandle[Routes.BOOK_DETAIL_ARG_ID] ?: Routes.BOOK_EDIT_NEW_ID
     private val _event = MutableStateFlow<DetailEvent?>(null)
+
+    /** 이 도서의 대출 이력(append-only). BOOK-008. */
+    val history: StateFlow<List<BookLoanHistoryView>> =
+        loanRepository.bookLoanHistory(bookId)
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000L), emptyList())
 
     val ui: StateFlow<BookDetailUiState> = combine(
         bookRepository.flowById(bookId),
