@@ -260,7 +260,45 @@ _최종 갱신: 2026-07-17_
 - 권한 가드: 관리자 화면 진입점 숨김 + ViewModel isAdmin 이중 방어.
 - 빌드 검증: `./gradlew :app:assembleDebug` **BUILD SUCCESSFUL**. 실기기 DoD 검증 후 커밋.
 
-### ⏭️ 다음: UX 개선(별도 style 커밋) → 이후 7단계
+### ✅ UX 개선 7가지 (완료, style 커밋 `c30a066`)
 
-- UX: 앱 아이콘(적응형·벡터), 상단 메뉴 텍스트버튼, 도서 상세/목록 표지 이미지, 뒤로가기 아이콘.
-- 7단계: LOAN-004(바코드 반납)·LOAN-005(연장)·LOAN-007(강제반납)·CMN-003·CMN-004·HIST-005·AUTH-006·BOOK-009 + ProGuard·release·다크모드. **4단계 USB-C HID 스캐너 실물 테스트도 이 시점까지 보류 중.**
+1. 앱 아이콘: 파란 배경 + 흰 책 벡터(적응형, 안전영역 준수).
+2. 상단 메뉴 반응형: ≥600dp 텍스트 버튼 나열, 미만 오버플로(⋮). 항목 단일 정의(`BookListScreen.TopAction`).
+3. 도서 표지: 공용 `BookCover`(AsyncImage + 📖 placeholder) — 상세(120×170)·목록 썸네일(48×64).
+4. 뒤로가기: 공용 `BackButton`(`Icons.AutoMirrored.Filled.ArrowBack`, contentDescription 유지) 10개 화면. `material-icons-core`(BOM 관리) 추가.
+5. 이력 기간 필터: `DateRangePicker`(시스템 시간대 경계, 종료일 inclusive) + 커스텀 headline(`yyyy.MM.dd`, titleLarge, maxLines=1) + title "조회 기간 선택".
+6. 문구: "가용/총" → "잔여 N권 / 전체 N권"(공용 문자열 하나로 3화면 일괄).
+7. (헤드라인은 5에 통합.)
+
+### 📊 현재 상태 요약
+
+- **1~6단계 완료** (각 단계 실기기 DoD 검증 통과).
+- **UX 개선 7가지 완료.**
+- **ISBN-10 → ISBN-13 자동 변환 지원** (DB엔 항상 13자리 저장, 설계 원칙 11).
+- **다음 차례: 7단계 (선택 요건 및 마감).**
+
+### 🚧 보류/미완 항목 (잊지 말 것)
+
+- **USB-C HID 스캐너 실물 테스트 미완** — 스캐너 분실(4단계 (C) 항목). 카메라·수동·오프라인 폴백·보유도서(A/B/D/E)는 검증 완료. 스캐너 확보 시 확인: ① `MainActivity.dispatchKeyEvent`가 이벤트를 소비하지 않는지(포커스 필드 도달) ② 한국 도서 **부가기호 5자리**가 ISBN 뒤에 붙어오는지(붙으면 처리 필요).
+- **갤럭시 S7 테스트 보류** — Android 8.0 = minSdk 26 경계 확인용이나, micro-USB라 USB-C 스캐너 직결 불가.
+- **폰 좁은 화면(<600dp) ⋮ 메뉴 분기 미검증** — 태블릿은 항상 텍스트 분기라 실행되지 않음. **폰 에뮬레이터로 확인 필요.**
+- **카카오 REST API 키 재발급 권장** — 대화 중 키가 노출된 이력 있음(보안).
+
+### 🖥️ 개발 환경 메모
+
+- 실기기: **Alldocube iPlay 60 mini Pro (Android 14)**, 무선 디버깅.
+- 재연결: 태블릿 무선 디버깅 ON → 메인 화면에서 **IP:포트** 확인 → `adb connect IP:포트` (페어링은 완료됨, **포트는 매번 바뀜**).
+- Database Inspector: **앱 실행 상태**에서 App Inspection → 프로세스 선택 → **Live updates** 권장.
+
+### 📌 7단계 대비 메모
+
+- 7단계는 항목이 많으니 **묶음을 나눠서** 진행.
+- **CMN-004 백업/복원**: Room 기본 **WAL 모드**(`WRITE_AHEAD_LOGGING`)라 `.db`만 복사하면 `-wal`의 최근 변경이 누락됨 → **체크포인트 처리 필요**(예: `PRAGMA wal_checkpoint(TRUNCATE)`).
+- **CMN-003 정책 설정**: 값 검증 필요 (예: 세션 타임아웃 0이면 로그인 즉시 로그아웃).
+- **LOAN-007 강제반납**: `actor_id`에 처음으로 **본인이 아닌 관리자**가 기록되는 케이스(자가대출 모델의 예외).
+
+### ⏭️ 다음: 7단계 — 선택 요건 및 마감
+
+- LOAN-004(바코드 반납)·LOAN-005(연장)·LOAN-007(강제반납)·CMN-003(정책설정)·CMN-004(백업/복원)·HIST-005(통계)·AUTH-006(만료 30초 전 안내)·BOOK-009(분실처리).
+- ProGuard 규칙(Room/Hilt/Moshi/ML Kit)·release 빌드 검증·다크모드·문자열 하드코딩 제거.
+- 착수 시 계획(묶음 분할)을 먼저 제시하고 확인받는다.
