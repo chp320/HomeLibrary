@@ -18,6 +18,8 @@ import com.home.library.ui.auth.signup.SignUpScreen
 import com.home.library.ui.book.detail.BookDetailScreen
 import com.home.library.ui.book.edit.BookEditScreen
 import com.home.library.ui.book.list.BookListScreen
+import com.home.library.ui.loan.LoanScreen
+import com.home.library.ui.loan.ReturnScreen
 import com.home.library.ui.scan.ScanScreen
 
 /**
@@ -39,14 +41,13 @@ fun AppNavHost(
     LaunchedEffect(isLoggedIn) {
         val current = navController.currentDestination?.route
         if (isLoggedIn) {
+            // 로그인 성공 시 인증 화면만 pop → 호출한 화면(대출 등)으로 복귀
             if (current == Routes.LOGIN || current == Routes.CHANGE_PASSWORD) {
-                navController.popBackStack(Routes.BOOK_LIST, inclusive = false)
+                navController.popBackStack(Routes.LOGIN, inclusive = true)
             }
         } else {
-            // 로그아웃/만료 → 로그인 필요 화면(스캔/편집)이면 목록으로 복귀
-            if (current != null &&
-                (current == Routes.SCAN || current.startsWith(Routes.BOOK_EDIT_PREFIX))
-            ) {
+            // 로그아웃/만료 → 로그인 필요 화면(스캔/편집/대출/반납)이면 목록으로 복귀
+            if (current != null && current.isLoginRequired()) {
                 navController.popBackStack(Routes.BOOK_LIST, inclusive = false)
             }
         }
@@ -62,6 +63,8 @@ fun AppNavHost(
                 onBookClick = { id -> navController.navigate(Routes.bookDetail(id)) },
                 onAddBook = { navController.navigate(Routes.bookEdit()) },
                 onNavigateScan = { navController.navigate(Routes.SCAN) },
+                onNavigateLoan = { navController.navigate(Routes.loan()) },
+                onNavigateReturn = { navController.navigate(Routes.RETURN) },
                 onNavigateLogin = { navController.navigate(Routes.LOGIN) },
             )
         }
@@ -98,6 +101,7 @@ fun AppNavHost(
         ) {
             BookDetailScreen(
                 onEdit = { id -> navController.navigate(Routes.bookEdit(id)) },
+                onLoan = { id -> navController.navigate(Routes.loan(id)) },
                 onDeleted = { navController.popBackStack() },
                 onBack = { navController.popBackStack() },
             )
@@ -120,5 +124,34 @@ fun AppNavHost(
                 onBack = { navController.popBackStack() },
             )
         }
+        composable(
+            route = Routes.LOAN,
+            arguments = listOf(
+                navArgument(Routes.LOAN_ARG_BOOK_ID) {
+                    type = NavType.LongType
+                    defaultValue = Routes.LOAN_NO_BOOK_ID
+                },
+            ),
+        ) {
+            LoanScreen(
+                onNavigateLogin = { navController.navigate(Routes.LOGIN) },
+                onRegister = { isbn -> navController.navigate(Routes.bookEdit(isbn = isbn)) },
+                onLoaned = { navController.popBackStack() },
+                onBack = { navController.popBackStack() },
+            )
+        }
+        composable(Routes.RETURN) {
+            ReturnScreen(
+                onNavigateLogin = { navController.navigate(Routes.LOGIN) },
+                onBack = { navController.popBackStack() },
+            )
+        }
     }
 }
+
+/** 로그인 필요 화면인지(로그아웃/만료 시 도서 목록으로 되돌릴 대상). */
+private fun String.isLoginRequired(): Boolean =
+    this == Routes.SCAN ||
+        this == Routes.RETURN ||
+        startsWith(Routes.BOOK_EDIT_PREFIX) ||
+        startsWith(Routes.LOAN_PREFIX)

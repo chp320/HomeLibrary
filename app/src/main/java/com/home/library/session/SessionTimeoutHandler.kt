@@ -47,6 +47,8 @@ class SessionTimeoutHandler @Inject constructor(
     suspend fun checkExpiry() {
         val current = sessionManager.state.value
         if (current !is SessionState.LoggedIn) return
+        // 대출/반납 트랜잭션 진행 중이면 만료 유예(요건: 트랜잭션 중 자동 로그아웃 방지)
+        if (sessionManager.inCriticalSection) return
         val elapsed = System.currentTimeMillis() - current.lastActivityAt
         if (elapsed >= timeoutMillis()) {
             sessionManager.clear()

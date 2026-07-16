@@ -31,4 +31,14 @@ object Routes {
     const val CHANGE_PASSWORD_ARG_USER_ID = "userId"
     const val CHANGE_PASSWORD = "changePassword/{$CHANGE_PASSWORD_ARG_USER_ID}"
     fun changePassword(userId: Long): String = "changePassword/$userId"
+
+    /** 대출(SCR-07). bookId 미지정=스캔으로 선택, 지정=해당 도서 대출. 로그인 필요. */
+    const val LOAN_ARG_BOOK_ID = "bookId"
+    const val LOAN_NO_BOOK_ID = -1L
+    const val LOAN = "loan?bookId={$LOAN_ARG_BOOK_ID}"
+    const val LOAN_PREFIX = "loan"
+    fun loan(bookId: Long = LOAN_NO_BOOK_ID): String = "loan?bookId=$bookId"
+
+    /** 반납(SCR-08). 로그인 필요. */
+    const val RETURN = "return"
 }

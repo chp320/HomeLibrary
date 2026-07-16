@@ -116,4 +116,28 @@
     <string name="scan_use_camera">카메라로 스캔</string>
     <string name="scan_close_camera">카메라 닫기</string>
     <string name="scan_error_invalid_isbn">올바른 ISBN이 아닙니다. (13자리 숫자)</string>
+
+    <!-- 대출 (SCR-07) -->
+    <string name="loan_title">대출</string>
+    <string name="loan_login_required">대출하려면 로그인이 필요합니다.</string>
+    <string name="loan_scan_hint">대출할 도서의 바코드를 스캔하거나 ISBN을 입력하세요.</string>
+    <string name="loan_borrower">대출자: %1$s</string>
+    <string name="loan_button">대출하기</string>
+    <string name="loan_register">도서 등록</string>
+    <string name="loan_msg_not_registered">등록되지 않은 도서입니다.</string>
+    <string name="loan_msg_book_unavailable">대출할 수 없는 도서입니다.</string>
+    <string name="loan_msg_already_borrowed">이미 대출 중인 도서입니다.</string>
+    <string name="loan_msg_has_overdue">연체 중인 도서가 있어 대출할 수 없습니다.</string>
+    <string name="loan_msg_max_count">최대 대출 권수(%1$d권)를 초과했습니다.</string>
+    <string name="loan_msg_not_available">모든 권이 대출 중입니다.</string>
+
+    <!-- 반납 (SCR-08) -->
+    <string name="return_title">반납</string>
+    <string name="return_login_required">반납하려면 로그인이 필요합니다.</string>
+    <string name="return_empty">대출 중인 도서가 없습니다.</string>
+    <string name="return_button">반납</string>
+    <string name="return_due">반납예정일: %1$s</string>
+    <string name="return_dday">D-%1$d</string>
+    <string name="return_dday_today">오늘까지</string>
+    <string name="return_overdue">연체 %1$d일</string>
 </resources>

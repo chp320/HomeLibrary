@@ -36,6 +36,8 @@ fun BookListScreen(
     onBookClick: (Long) -> Unit,
     onAddBook: () -> Unit,
     onNavigateScan: () -> Unit,
+    onNavigateLoan: () -> Unit,
+    onNavigateReturn: () -> Unit,
     onNavigateLogin: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: BookListViewModel = hiltViewModel(),
@@ -54,6 +56,12 @@ fun BookListScreen(
                         }
                     }
                     if (state.isLoggedIn) {
+                        TextButton(onClick = onNavigateLoan) {
+                            Text(stringResource(R.string.loan_title))
+                        }
+                        TextButton(onClick = onNavigateReturn) {
+                            Text(stringResource(R.string.return_title))
+                        }
                         TextButton(onClick = viewModel::logout) {
                             Text(stringResource(R.string.common_logout))
                         }

@@ -29,11 +29,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.home.library.R
+import com.home.library.data.local.enums.BookStatus
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BookDetailScreen(
     onEdit: (Long) -> Unit,
+    onLoan: (Long) -> Unit,
     onDeleted: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
@@ -98,6 +100,16 @@ fun BookDetailScreen(
                 stringResource(R.string.book_label_qty),
                 stringResource(R.string.book_available_count, book.availableQty, book.totalQty),
             )
+
+            // 대출하기: 누구에게나 보임(비로그인은 대출 화면에서 로그인 유도). 폐기/분실 도서는 숨김.
+            if (book.status == BookStatus.AVAILABLE) {
+                Button(
+                    onClick = { onLoan(book.bookId) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp),
+                ) { Text(stringResource(R.string.loan_button)) }
+            }
 
             if (state.isAdmin) {
                 Row(

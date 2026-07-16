@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.lifecycleScope
+import com.home.library.loan.OverdueUpdater
 import com.home.library.session.SessionManager
 import com.home.library.session.SessionTimeoutHandler
 import com.home.library.ui.navigation.AppNavHost
@@ -27,6 +28,9 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var sessionTimeoutHandler: SessionTimeoutHandler
+
+    @Inject
+    lateinit var overdueUpdater: OverdueUpdater
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,6 +51,8 @@ class MainActivity : ComponentActivity() {
         super.onStart()
         // 포그라운드 동안 10초 폴링 감시
         sessionTimeoutHandler.start(lifecycleScope)
+        // 기한 지난 대출을 OVERDUE로 전환(멱등). onCreate가 아닌 onStart라 백그라운드 복귀 시에도 갱신.
+        lifecycleScope.launch { overdueUpdater.run() }
     }
 
     override fun onResume() {

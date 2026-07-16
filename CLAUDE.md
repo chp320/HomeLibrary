@@ -230,7 +230,23 @@ _최종 갱신: 2026-07-17_
 - 실기기 검증(태블릿 Android 14): 수동 입력, 카메라 EAN-13 스캔, 오프라인 폴백, 보유도서 +1 수량증가 통과.
 - **⚠️ 미완(보류): USB-C HID 하드웨어 스캐너 실물 테스트.** 스캐너 미확보로 물리 스캔 경로만 미검증. 배선(자동포커스 필드가 HID 키입력 수신)은 코드상 완료. 스캐너 확보 시 실물 검증 필요.
 
-### ⏭️ 다음: 5단계 — 대출/반납/연체 착수 예정
+### ✅ 5단계 — 대출/반납/연체 (완료)
 
-- 커버 요건: LOAN-001~003, LOAN-006, SCR-07, SCR-08.
-- 착수 시 계획(정책/검증/트랜잭션/OverdueUpdater/자동로그아웃 유예/바코드 재사용)을 먼저 제시하고 확인받는다.
+- 커버 요건: LOAN-001~003, LOAN-006, SCR-07, SCR-08. 자가대출 모델(대출자=세션 본인, actor_id=본인).
+- 데이터: `LoanDao` 확장(`countActiveByUserAndBook`(신규)·`countOverdueByUser`·`markOverdue`·`getActiveLoansByUser` JOIN Flow) + `ActiveLoanView` 프로젝션.
+- 도메인: `LoanPolicy`(AppConfig), `LoanValidator` **4대 검증**(중복대출→연체보유→최대권수→가용수량), `LoanRepository`(`db.withTransaction` 원자적).
+  - `loan()`: 검증 → `decreaseAvailable`(0이면 롤백) → LOANS/LOAN_HISTORY.
+  - `returnBook()`: `increaseAvailable` → LOANS(RETURNED)/HISTORY. **수량증가 0(데이터 불일치)이면 롤백 대신 로그(`Log.w`)만 남기고 반납 진행** — 사용자를 가두지 않기 위함.
+- `OverdueUpdater`(멱등)를 `MainActivity.onStart`에서 호출(onCreate 아님 → 백그라운드 복귀 시에도 갱신).
+- 자동 로그아웃 유예: `SessionManager.withCriticalSection`(try/finally) + `SessionTimeoutHandler`가 크리티컬 섹션 중 만료 스킵.
+- UI: `IsbnScanInput`(4단계 스캔을 재사용 컴포넌트로 추출, ISBN 콜백까지만) → 등록/대출 공유, `ScanViewModel` 제거. `LoanScreen`(로컬조회만·API 금지, 미등록/가용0/중복/연체/최대권수 케이스별 안내), `ReturnScreen`(내 활성대출 목록·D-n/연체 색상구분·Flow 자동갱신, 6단계 재사용 구조).
+- 접근: 비로그인도 "대출하기" 노출 → 로그인 유도 → **로그인 성공 시 LOGIN만 pop해 대출 화면으로 복귀**(AppNavHost 변경). LOAN/RETURN은 로그인 필요(만료 시 목록 복귀).
+- 신규 의존성/스키마 변경 없음(마이그레이션 불필요).
+- 빌드 검증: `./gradlew :app:assembleDebug` **BUILD SUCCESSFUL**.
+- 실기기 검증(태블릿 Android 14): 대출 원자반영, 가용0 거부, 6권째 거부, 동일도서 중복 거부, due_date 조작 후 재시작 OVERDUE 전환·신규대출 차단, 반납, 로그인 후 대출 복귀. DoD 전부 통과.
+- **⚠️ 4단계 USB-C HID 스캐너 실물 테스트는 여전히 보류 중**(스캐너 미확보). 배선은 코드상 완료.
+
+### ⏭️ 다음: 6단계 — 이력 조회 + 관리자 기능 착수 예정
+
+- 커버 요건: HIST-001~004, USER-001~004, SCR-09, SCR-10, SCR-12, SCR-13.
+- 착수 시 계획을 먼저 제시하고 확인받는다.
