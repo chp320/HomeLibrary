@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.home.library.R
+import com.home.library.ui.common.BackButton
 import com.home.library.book.IsbnError
 import com.home.library.book.OptionalTextError
 import com.home.library.book.PubDateError
@@ -65,7 +66,7 @@ fun BookEditScreen(
                     )
                 },
                 navigationIcon = {
-                    TextButton(onClick = onBack) { Text(stringResource(R.string.common_back)) }
+                    BackButton(onBack)
                 },
             )
         },

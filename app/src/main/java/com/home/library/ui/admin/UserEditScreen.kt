@@ -31,6 +31,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.home.library.R
+import com.home.library.ui.common.BackButton
 import com.home.library.auth.LoginIdError
 import com.home.library.auth.NameError
 import com.home.library.auth.PasswordError
@@ -57,7 +58,7 @@ fun UserEditScreen(
                     Text(stringResource(if (state.isEdit) R.string.user_edit_title_edit else R.string.user_edit_title_new))
                 },
                 navigationIcon = {
-                    TextButton(onClick = onBack) { Text(stringResource(R.string.common_back)) }
+                    BackButton(onBack)
                 },
             )
         },

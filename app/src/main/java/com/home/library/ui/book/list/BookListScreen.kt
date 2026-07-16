@@ -1,10 +1,14 @@
 package com.home.library.ui.book.list
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -35,6 +39,13 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.home.library.R
 import com.home.library.data.local.entity.BookEntity
+import com.home.library.ui.common.BookCover
+
+/** 상단 메뉴 항목 단일 정의(텍스트/오버플로 분기가 같은 항목·권한을 공유). */
+private data class TopAction(val labelRes: Int, val adminOnly: Boolean, val onClick: () -> Unit)
+
+/** 이 폭 이상이면 텍스트 버튼 나열, 미만이면 오버플로(⋮). 600dp=compact/medium 경계. */
+private const val WIDE_MENU_MIN_DP = 600
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,108 +63,123 @@ fun BookListScreen(
 ) {
     val state by viewModel.ui.collectAsState()
 
-    Scaffold(
-        modifier = modifier,
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.book_list_title)) },
-                actions = {
-                    if (state.isLoggedIn) {
-                        var menuOpen by remember { mutableStateOf(false) }
-                        IconButton(onClick = { menuOpen = true }) {
-                            Text("⋮", style = MaterialTheme.typography.titleLarge)
-                        }
-                        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                            MenuItem(stringResource(R.string.my_loan_title)) { menuOpen = false; onNavigateMyLoan() }
-                            MenuItem(stringResource(R.string.loan_title)) { menuOpen = false; onNavigateLoan() }
-                            MenuItem(stringResource(R.string.return_title)) { menuOpen = false; onNavigateReturn() }
-                            if (state.isAdmin) {
-                                MenuItem(stringResource(R.string.book_scan_register)) { menuOpen = false; onNavigateScan() }
-                                MenuItem(stringResource(R.string.admin_home_title)) { menuOpen = false; onNavigateAdmin() }
+    BoxWithConstraints(modifier = modifier) {
+        val wide = maxWidth >= WIDE_MENU_MIN_DP.dp
+
+        val actions = listOf(
+            TopAction(R.string.my_loan_title, adminOnly = false, onClick = onNavigateMyLoan),
+            TopAction(R.string.loan_title, adminOnly = false, onClick = onNavigateLoan),
+            TopAction(R.string.return_title, adminOnly = false, onClick = onNavigateReturn),
+            TopAction(R.string.book_scan_register, adminOnly = true, onClick = onNavigateScan),
+            TopAction(R.string.admin_home_title, adminOnly = true, onClick = onNavigateAdmin),
+            TopAction(R.string.common_logout, adminOnly = false, onClick = viewModel::logout),
+        ).filter { !it.adminOnly || state.isAdmin }
+
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            topBar = {
+                TopAppBar(
+                    title = { Text(stringResource(R.string.book_list_title)) },
+                    actions = {
+                        when {
+                            !state.isLoggedIn -> TextButton(onClick = onNavigateLogin) {
+                                Text(stringResource(R.string.common_login))
                             }
-                            MenuItem(stringResource(R.string.common_logout)) { menuOpen = false; viewModel.logout() }
+                            wide -> actions.forEach { a ->
+                                TextButton(onClick = a.onClick) { Text(stringResource(a.labelRes)) }
+                            }
+                            else -> {
+                                var menuOpen by remember { mutableStateOf(false) }
+                                IconButton(onClick = { menuOpen = true }) {
+                                    Text("⋮", style = MaterialTheme.typography.titleLarge)
+                                }
+                                DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                                    actions.forEach { a ->
+                                        DropdownMenuItem(
+                                            text = { Text(stringResource(a.labelRes)) },
+                                            onClick = { menuOpen = false; a.onClick() },
+                                        )
+                                    }
+                                }
+                            }
                         }
-                    } else {
-                        TextButton(onClick = onNavigateLogin) {
-                            Text(stringResource(R.string.common_login))
-                        }
-                    }
-                },
-            )
-        },
-        floatingActionButton = {
-            if (state.isAdmin) {
-                ExtendedFloatingActionButton(
-                    text = { Text(stringResource(R.string.book_add)) },
-                    icon = { Text("+", style = MaterialTheme.typography.titleLarge) },
-                    onClick = onAddBook,
+                    },
                 )
-            }
-        },
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = 16.dp),
-        ) {
-            OutlinedTextField(
-                value = state.query,
-                onValueChange = viewModel::onQueryChange,
-                label = { Text(stringResource(R.string.book_search_hint)) },
-                singleLine = true,
+            },
+            floatingActionButton = {
+                if (state.isAdmin) {
+                    ExtendedFloatingActionButton(
+                        text = { Text(stringResource(R.string.book_add)) },
+                        icon = { Text("+", style = MaterialTheme.typography.titleLarge) },
+                        onClick = onAddBook,
+                    )
+                }
+            },
+        ) { innerPadding ->
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp),
-            )
-
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .padding(horizontal = 16.dp),
             ) {
-                item {
-                    FilterChip(
-                        selected = state.availableOnly,
-                        onClick = { viewModel.onAvailableOnlyChange(!state.availableOnly) },
-                        label = { Text(stringResource(R.string.book_filter_available)) },
-                    )
-                }
-                item {
-                    FilterChip(
-                        selected = state.category == null,
-                        onClick = { viewModel.onCategoryChange(null) },
-                        label = { Text(stringResource(R.string.book_filter_all_categories)) },
-                    )
-                }
-                items(state.categories) { category ->
-                    FilterChip(
-                        selected = state.category == category,
-                        onClick = { viewModel.onCategoryChange(category) },
-                        label = { Text(category) },
-                    )
-                }
-            }
+                OutlinedTextField(
+                    value = state.query,
+                    onValueChange = viewModel::onQueryChange,
+                    label = { Text(stringResource(R.string.book_search_hint)) },
+                    singleLine = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                )
 
-            if (state.books.isEmpty()) {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally,
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
                 ) {
-                    Text(
-                        text = stringResource(R.string.book_empty),
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
+                    item {
+                        FilterChip(
+                            selected = state.availableOnly,
+                            onClick = { viewModel.onAvailableOnlyChange(!state.availableOnly) },
+                            label = { Text(stringResource(R.string.book_filter_available)) },
+                        )
+                    }
+                    item {
+                        FilterChip(
+                            selected = state.category == null,
+                            onClick = { viewModel.onCategoryChange(null) },
+                            label = { Text(stringResource(R.string.book_filter_all_categories)) },
+                        )
+                    }
+                    items(state.categories) { category ->
+                        FilterChip(
+                            selected = state.category == category,
+                            onClick = { viewModel.onCategoryChange(category) },
+                            label = { Text(category) },
+                        )
+                    }
                 }
-            } else {
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxSize(),
-                ) {
-                    items(state.books, key = { it.bookId }) { book ->
-                        BookRow(book = book, onClick = { onBookClick(book.bookId) })
+
+                if (state.books.isEmpty()) {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Text(
+                            text = stringResource(R.string.book_empty),
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
+                } else {
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxSize(),
+                    ) {
+                        items(state.books, key = { it.bookId }) { book ->
+                            BookRow(book = book, onClick = { onBookClick(book.bookId) })
+                        }
                     }
                 }
             }
@@ -161,35 +187,45 @@ fun BookListScreen(
     }
 }
 
-@Composable
-private fun MenuItem(label: String, onClick: () -> Unit) {
-    DropdownMenuItem(text = { Text(label) }, onClick = onClick)
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun BookRow(book: BookEntity, onClick: () -> Unit) {
     Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = book.title,
-                style = MaterialTheme.typography.titleMedium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            BookCover(
+                coverUrl = book.coverUrl,
+                modifier = Modifier
+                    .width(48.dp)
+                    .height(64.dp),
             )
-            book.author?.let {
+            Column(
+                modifier = Modifier
+                    .padding(start = 12.dp)
+                    .weight(1f),
+            ) {
                 Text(
-                    text = it,
-                    style = MaterialTheme.typography.bodyMedium,
+                    text = book.title,
+                    style = MaterialTheme.typography.titleMedium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
+                book.author?.let {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.bodyMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                Text(
+                    text = stringResource(R.string.book_available_count, book.availableQty, book.totalQty),
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
             }
-            Text(
-                text = stringResource(R.string.book_available_count, book.availableQty, book.totalQty),
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(top = 4.dp),
-            )
         }
     }
 }

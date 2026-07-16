@@ -22,6 +22,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.home.library.R
+import com.home.library.ui.common.BackButton
 import com.home.library.data.local.enums.LoanStatus
 import com.home.library.ui.loan.formatDate
 import com.home.library.ui.loan.loanStatusLabel
@@ -41,7 +42,7 @@ fun AdminLoanStatusScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.admin_loan_status_title)) },
                 navigationIcon = {
-                    TextButton(onClick = onBack) { Text(stringResource(R.string.common_back)) }
+                    BackButton(onBack)
                 },
             )
         },

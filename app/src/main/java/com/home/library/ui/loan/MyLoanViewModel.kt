@@ -2,7 +2,6 @@ package com.home.library.ui.loan
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.home.library.book.BookFormValidator
 import com.home.library.data.local.view.ActiveLoanView
 import com.home.library.data.local.view.LoanHistoryRecord
 import com.home.library.data.repository.LoanRepository
@@ -19,8 +18,10 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import java.time.ZoneOffset
 import javax.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -52,20 +53,27 @@ class MyLoanViewModel @Inject constructor(
     }
 
     fun onBookQueryChange(v: String) = _history.update { it.copy(bookQuery = v) }
-    fun onFromDateChange(v: String) = _history.update { it.copy(fromDate = v, dateError = false) }
-    fun onToDateChange(v: String) = _history.update { it.copy(toDate = v, dateError = false) }
 
-    /** 필터 적용(첫 페이지부터 새로 로드). */
+    /**
+     * DateRangePicker가 넘긴 UTC 자정 millis를 받아 사용자가 고른 날짜(LocalDate)로 저장한다.
+     * null이면 기간 미선택(전체). 선택 즉시 재조회.
+     */
+    fun setDateRange(startUtcMillis: Long?, endUtcMillis: Long?) {
+        val start = startUtcMillis?.toPickedLocalDate()
+        val end = endUtcMillis?.toPickedLocalDate()
+        _history.update { it.copy(startDate = start, endDate = end) }
+        applyFilters()
+    }
+
+    fun clearDateRange() {
+        _history.update { it.copy(startDate = null, endDate = null) }
+        applyFilters()
+    }
+
+    /** 필터(도서명/기간) 적용 → 첫 페이지부터 새로 로드. */
     fun applyFilters() {
-        val s = _history.value
-        if (BookFormValidator.validatePubDate(s.fromDate) != null ||
-            BookFormValidator.validatePubDate(s.toDate) != null
-        ) {
-            _history.update { it.copy(dateError = true) }
-            return
-        }
         offset = 0
-        _history.update { it.copy(records = emptyList(), canLoadMore = true, dateError = false) }
+        _history.update { it.copy(records = emptyList(), canLoadMore = true) }
         loadMore()
     }
 
@@ -73,8 +81,10 @@ class MyLoanViewModel @Inject constructor(
         val userId = (sessionManager.state.value as? SessionState.LoggedIn)?.userId ?: return
         val s = _history.value
         if (s.loading || !s.canLoadMore) return
-        val from = s.fromDate.toStartMillis() ?: 0L
-        val to = s.toDate.toEndMillis() ?: Long.MAX_VALUE
+        // 하루 경계는 반드시 시스템 시간대(KST 등)로 변환. 종료일은 그날 24:00-1ms까지 포함(inclusive).
+        val from = s.startDate?.atStartOfDay(ZoneId.systemDefault())?.toInstant()?.toEpochMilli() ?: 0L
+        val to = s.endDate?.plusDays(1)?.atStartOfDay(ZoneId.systemDefault())?.toInstant()?.toEpochMilli()
+            ?.minus(1) ?: Long.MAX_VALUE
         viewModelScope.launch {
             _history.update { it.copy(loading = true) }
             val page = loanRepository.userLoanHistory(userId, s.bookQuery, from, to, PAGE_SIZE, offset)
@@ -93,15 +103,9 @@ class MyLoanViewModel @Inject constructor(
         value = f(value)
     }
 
-    private fun String.toStartMillis(): Long? =
-        trim().ifBlank { null }?.let {
-            LocalDate.parse(it).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-        }
-
-    private fun String.toEndMillis(): Long? =
-        trim().ifBlank { null }?.let {
-            LocalDate.parse(it).plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli() - 1
-        }
+    /** 피커의 UTC 자정 millis → 고른 날짜. UTC로 해석해야 사용자가 탭한 날짜가 나온다. */
+    private fun Long.toPickedLocalDate(): LocalDate =
+        Instant.ofEpochMilli(this).atZone(ZoneOffset.UTC).toLocalDate()
 
     companion object {
         private const val PAGE_SIZE = 20
@@ -110,9 +114,8 @@ class MyLoanViewModel @Inject constructor(
 
 data class HistoryUiState(
     val bookQuery: String = "",
-    val fromDate: String = "",
-    val toDate: String = "",
-    val dateError: Boolean = false,
+    val startDate: LocalDate? = null,
+    val endDate: LocalDate? = null,
     val records: List<LoanHistoryRecord> = emptyList(),
     val canLoadMore: Boolean = true,
     val loading: Boolean = false,

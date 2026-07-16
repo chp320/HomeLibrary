@@ -68,6 +68,8 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    // Icons.AutoMirrored.Filled.ArrowBack 등 기본 아이콘 (버전은 Compose BOM이 관리, extended는 미사용)
+    implementation(libs.androidx.material.icons.core)
 
     // Room
     implementation(libs.androidx.room.runtime)

@@ -2,12 +2,15 @@ package com.home.library.ui.loan
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -19,20 +22,28 @@ import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.home.library.R
+import com.home.library.ui.common.BackButton
 import com.home.library.data.local.enums.LoanStatus
 import com.home.library.data.local.view.ActiveLoanView
 import com.home.library.data.local.view.LoanHistoryRecord
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,7 +63,7 @@ fun MyLoanScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.my_loan_title)) },
                 navigationIcon = {
-                    TextButton(onClick = onBack) { Text(stringResource(R.string.common_back)) }
+                    BackButton(onBack)
                 },
             )
         },
@@ -128,31 +139,34 @@ private fun HistoryTab(viewModel: MyLoanViewModel) {
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
         )
-        OutlinedTextField(
-            value = state.fromDate,
-            onValueChange = viewModel::onFromDateChange,
-            label = { Text(stringResource(R.string.history_from_date)) },
-            singleLine = true,
-            isError = state.dateError,
+        var showPicker by remember { mutableStateOf(false) }
+        val fmt = remember { DateTimeFormatter.ofPattern("yyyy.MM.dd") }
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth(),
-        )
-        OutlinedTextField(
-            value = state.toDate,
-            onValueChange = viewModel::onToDateChange,
-            label = { Text(stringResource(R.string.history_to_date)) },
-            singleLine = true,
-            isError = state.dateError,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        if (state.dateError) {
-            Text(
-                text = stringResource(R.string.history_date_error),
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodySmall,
-            )
+        ) {
+            OutlinedButton(onClick = { showPicker = true }, modifier = Modifier.weight(1f)) {
+                Text(periodLabel(state.startDate, state.endDate, fmt))
+            }
+            if (state.startDate != null || state.endDate != null) {
+                TextButton(onClick = viewModel::clearDateRange) {
+                    Text(stringResource(R.string.history_period_clear))
+                }
+            }
         }
         Button(onClick = viewModel::applyFilters, modifier = Modifier.fillMaxWidth()) {
             Text(stringResource(R.string.history_apply))
+        }
+
+        if (showPicker) {
+            DateRangeFilterDialog(
+                onConfirm = { start, end ->
+                    viewModel.setDateRange(start, end)
+                    showPicker = false
+                },
+                onDismiss = { showPicker = false },
+            )
         }
 
         if (state.records.isEmpty() && !state.loading) {
@@ -196,3 +210,71 @@ private fun HistoryRow(record: LoanHistoryRecord) {
         }
     }
 }
+
+@Composable
+private fun periodLabel(start: LocalDate?, end: LocalDate?, fmt: DateTimeFormatter): String {
+    val s = start?.format(fmt)
+    val e = end?.format(fmt)
+    return when {
+        s != null && e != null -> stringResource(R.string.history_period_range, s, e)
+        s != null -> s
+        e != null -> e
+        else -> stringResource(R.string.history_period_all)
+    }
+}
+
+/** 기간 선택 다이얼로그. 실험 API는 이 컴포저블에만 국한(opt-in 최소화). */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DateRangeFilterDialog(
+    onConfirm: (Long?, Long?) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val pickerState = rememberDateRangePickerState()
+    DatePickerDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = {
+                onConfirm(pickerState.selectedStartDateMillis, pickerState.selectedEndDateMillis)
+            }) { Text(stringResource(R.string.common_confirm)) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
+        },
+    ) {
+        val fmt = remember { DateTimeFormatter.ofPattern("yyyy.MM.dd") }
+        DateRangePicker(
+            state = pickerState,
+            title = {
+                Text(
+                    text = stringResource(R.string.daterange_title),
+                    style = MaterialTheme.typography.labelLarge,
+                    modifier = Modifier.padding(start = 24.dp, end = 12.dp, top = 16.dp),
+                )
+            },
+            headline = {
+                val startStr = pickerState.selectedStartDateMillis?.let { utcMillisToLocalDate(it).format(fmt) }
+                val endStr = pickerState.selectedEndDateMillis?.let { utcMillisToLocalDate(it).format(fmt) }
+                val text = when {
+                    startStr != null && endStr != null ->
+                        stringResource(R.string.history_period_range, startStr, endStr)
+                    startStr != null -> stringResource(R.string.daterange_start_only, startStr)
+                    else -> stringResource(R.string.daterange_select_prompt)
+                }
+                Text(
+                    text = text,
+                    style = MaterialTheme.typography.titleLarge,
+                    maxLines = 1,
+                    modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 12.dp),
+                )
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+        )
+    }
+}
+
+/** 피커의 UTC 자정 millis → 고른 날짜(UTC로 해석). 표시용. */
+private fun utcMillisToLocalDate(millis: Long): LocalDate =
+    Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate()

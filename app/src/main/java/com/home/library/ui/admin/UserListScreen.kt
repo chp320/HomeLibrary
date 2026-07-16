@@ -26,6 +26,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.home.library.R
+import com.home.library.ui.common.BackButton
 import com.home.library.data.local.enums.UserRole
 import com.home.library.data.local.enums.UserStatus
 import com.home.library.data.local.view.UserListItem
@@ -47,7 +48,7 @@ fun UserListScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.user_list_title)) },
                 navigationIcon = {
-                    TextButton(onClick = onBack) { Text(stringResource(R.string.common_back)) }
+                    BackButton(onBack)
                 },
             )
         },
