@@ -8,4 +8,5 @@ object ConfigKeys {
     const val LOAN_EXTEND_MAX = "loan.extend.max"
     const val SESSION_TIMEOUT_MINUTES = "session.timeout.minutes"
     const val LOGIN_FAIL_LIMIT = "login.fail.limit"
+    const val LOGIN_LOCK_MINUTES = "login.lock.minutes"
 }

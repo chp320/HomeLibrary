@@ -6,7 +6,7 @@ import com.home.library.security.PasswordHasher
 /**
  * DB 최초 생성 시 1회 실행되는 시드.
  * - 관리자 계정 1건 (login_id=admin, password=admin1234 → BCrypt 해시, pwd_change_required=1)
- * - APP_CONFIG 기본값 6건
+ * - APP_CONFIG 기본값 7건
  *
  * onCreate는 DB 생성 스레드(백그라운드)에서 호출되므로 blocking 해싱을 사용한다.
  * DAO 재진입 데드락을 피하기 위해 execSQL로 직접 삽입한다.
@@ -52,6 +52,7 @@ class SeedCallback : androidx.room.RoomDatabase.Callback() {
             Triple(ConfigKeys.LOAN_EXTEND_MAX, "1", "최대 연장 횟수"),
             Triple(ConfigKeys.SESSION_TIMEOUT_MINUTES, "5", "세션 자동 로그아웃(분)"),
             Triple(ConfigKeys.LOGIN_FAIL_LIMIT, "5", "로그인 실패 잠금 임계값"),
+            Triple(ConfigKeys.LOGIN_LOCK_MINUTES, "5", "로그인 실패 잠금 시간(분)"),
         )
         defaults.forEach { (key, value, desc) ->
             db.execSQL(

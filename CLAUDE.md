@@ -67,12 +67,12 @@
 - **LOANS**: loan_id(PK), book_id(FK), user_id(FK), loan_date, due_date, return_date(nullable), status(LOANED/RETURNED/OVERDUE), extend_count
 - **LOAN_HISTORY** (append-only): history_id(PK), loan_id(FK), action(LOAN/RETURN/EXTEND/FORCE_RETURN), action_at, actor_id(FK), memo
 - **APP_CONFIG**: config_key(PK), config_value, description
-  - 기본값: loan.period.days=14, loan.max.count=5, loan.extend.days=7, loan.extend.max=1, session.timeout.minutes=5, login.fail.limit=5
+  - 기본값: loan.period.days=14, loan.max.count=5, loan.extend.days=7, loan.extend.max=1, session.timeout.minutes=5, login.fail.limit=5, login.lock.minutes=5
 
 ### 시드 데이터 (최초 DB 생성 시 1회)
 
 - 관리자: login_id=`admin`, password=`admin1234`(BCrypt 해시 저장), role=ROLE_ADMIN, pwd_change_required=1
-- APP_CONFIG 6건 기본값
+- APP_CONFIG 7건 기본값
 
 ## 5. Git / 형상 관리
 
@@ -93,12 +93,12 @@
 ### 1단계 — 프로젝트 골격 + Room 스키마 + 시드 (완료 기준)
 
 - Entity 5, DAO 5, AppDatabase + SeedCallback, DatabaseModule(Hilt), PasswordHasher, ConfigKeys, Enums, Converters
-- DoD: 5개 테이블 생성, admin 시드 1건(BCrypt 해시), app_config 6건, `app/schemas/1.json` 생성
+- DoD: 5개 테이블 생성, admin 시드 1건(BCrypt 해시), app_config 7건, `app/schemas/1.json` 생성
 
 ### 2단계 — 인증 (가입/로그인/5분 자동 로그아웃)
 
-- 커버 요건: AUTH-001~004, AUTH-006, SCR-02, SCR-03
-- AuthRepository(signUp/login/logout), SessionManager(메모리 보관), SessionTimeoutHandler(폴링), MainActivity.dispatchTouchEvent로 활동시각 갱신
+- 커버 요건: AUTH-001~004, SCR-02, SCR-03 (AUTH-006은 7단계로 이관)
+- AuthRepository(signUp/login/logout), SessionManager(메모리 보관), SessionTimeoutHandler(10초 폴링), MainActivity.dispatchTouchEvent/dispatchKeyEvent로 활동시각 갱신
 - 백그라운드 진입 중에도 타이머 경과, 복귀 시 즉시 만료 판정
 - 로그인 5회 실패 시 5분 잠금, admin 최초 로그인 시 비밀번호 변경 강제
 - 세션 타임아웃 값은 `AppConfigDao.getValue("session.timeout.minutes")`로 읽는다
@@ -168,7 +168,13 @@ adb logcat | grep -i "com.home.library"
 
 ## 진행 상태
 
-_최종 갱신: 2026-07-12_
+_최종 갱신: 2026-07-17_
+
+### 🧪 실기기 테스트 환경
+
+- 단말: 안드로이드 태블릿, Android 14.
+- 연결: 무선 디버깅(adb over Wi-Fi).
+- 검증 도구: Android Studio Database Inspector(시드/DB 상태 육안 확인).
 
 ### ✅ 1단계 — 프로젝트 골격 + Room 스키마 + 시드 (완료)
 
@@ -179,10 +185,22 @@ _최종 갱신: 2026-07-12_
 - 형상관리: git init(`main`) → 커밋 2건 → GitHub push 완료. 원격 `https://github.com/chp320/HomeLibrary.git`.
   - `4f47618 feat(db): Room 스키마 및 시드 데이터 구성`
   - `9a5e926 chore: LF 줄바꿈 정규화(.gitattributes)`
-- **런타임 미검증 항목(실기기 필요)**: admin 시드 1건 + app_config 6건은 DAO 최초 호출 시 생성됨. 아직 DAO를 호출하는 화면이 없어 눈으로 확인되지 않음 → 2단계 로그인 조회 시 자연 검증 예정.
+- 시드 런타임 검증은 2단계에서 완료(아래 참조).
 
-### ⏭️ 다음: 2단계 — 인증 (가입/로그인/5분 자동 로그아웃) 착수 예정
+### ✅ 2단계 — 인증 (가입/로그인/5분 자동 로그아웃) (완료)
 
-- 커버 요건: AUTH-001~004, AUTH-006, SCR-02, SCR-03
-- 착수 시 정할 것: AuthRepository/SessionManager/SessionTimeoutHandler 구조, MainActivity 활동시각 갱신 방식.
-- 이 과정에서 1단계 시드(admin/app_config) 런타임 검증을 겸함.
+- 커버 요건: AUTH-001~004, SCR-02, SCR-03 (AUTH-006은 7단계로 이관).
+- 세션: `SessionManager`(메모리 StateFlow 전용, 영속 저장 없음), `SessionTimeoutHandler`(10초 폴링 + 복귀 시 wall-clock 즉시 만료 판정). 타임아웃 값은 `session.timeout.minutes`를 AppConfig에서 조회.
+- 도메인: `AuthRepository`(signUp/login/changePassword). 로그인 처리 순서 = status 판정 → 잠금 판정 → 해시 검증 → 성공 시 fail_count/lock 리셋 → pwd_change_required 라우팅. `login.fail.limit`/`login.lock.minutes`도 AppConfig에서 조회(하드코딩 없음).
+- 검증: `AuthValidator`(표준 규칙 — 아이디 영소문자+숫자 4~20자, 비번 8~64자·영문+숫자 조합, 이름 20자 이하).
+- UI: `AppNavHost`(세션 상태로 로그인/로그아웃 경계 구동) + `LoginScreen`·`SignUpScreen`·`ChangePasswordScreen`(강제 변경, BackHandler 차단)·`HomeScreen`(임시 착지) + 각 ViewModel(Hilt). 문자열 전부 `strings.xml` 분리.
+- `MainActivity`: `dispatchTouchEvent`+`dispatchKeyEvent` 오버라이드로 활동시각 갱신(4단계 USB-C HID 스캐너 입력 대비), onStart/onResume/onStop 생명주기 연동.
+- 새 의존성: `androidx.navigation:navigation-compose` 2.7.7 추가.
+- APP_CONFIG 시드에 `login.lock.minutes=5` 추가(스키마 불변 → 마이그레이션/버전업 없음). 총 7건.
+- 빌드 검증: `./gradlew :app:assembleDebug` **BUILD SUCCESSFUL**.
+- 실기기 검증(태블릿 Android 14, 무선 디버깅): 가입/로그인, 5분 자동 로그아웃, 5회 실패 잠금, admin 최초 로그인 비밀번호 강제 변경 정상. Database Inspector로 시드(admin 1건·BCrypt 해시, app_config 7건) 확인. DoD 전부 통과.
+
+### ⏭️ 다음: 3단계 — 도서 CRUD + 검색 착수 예정
+
+- 커버 요건: BOOK-001, BOOK-004~008, SCR-04, SCR-05, SCR-11.
+- 착수 시 계획(파일 목록/화면 흐름/신규 의존성)을 먼저 제시하고 확인받는다.
