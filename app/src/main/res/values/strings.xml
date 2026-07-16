@@ -5,6 +5,12 @@
     <string name="common_login">로그인</string>
     <string name="common_logout">로그아웃</string>
     <string name="common_signup">회원가입</string>
+    <string name="common_back">뒤로</string>
+    <string name="common_edit">수정</string>
+    <string name="common_delete">삭제</string>
+    <string name="common_add">추가</string>
+    <string name="common_cancel">취소</string>
+    <string name="common_confirm">확인</string>
 
     <!-- 로그인 화면 -->
     <string name="login_title">로그인</string>
@@ -46,7 +52,49 @@
     <string name="changepw_success">비밀번호가 변경되었습니다.</string>
     <string name="changepw_error_same_as_old">기존 비밀번호와 다르게 설정하세요.</string>
 
-    <!-- 홈 화면(임시 착지 화면) -->
-    <string name="home_welcome">%1$s님 환영합니다.</string>
-    <string name="home_role">권한: %1$s</string>
+    <!-- 도서 목록/검색 (SCR-04) -->
+    <string name="book_list_title">도서 목록</string>
+    <string name="book_search_hint">제목·저자·출판사·ISBN 검색</string>
+    <string name="book_filter_available">대출 가능</string>
+    <string name="book_filter_all_categories">전체</string>
+    <string name="book_available_count">가용 %1$d / 총 %2$d</string>
+    <string name="book_empty">도서가 없습니다.</string>
+    <string name="book_add">도서 등록</string>
+
+    <!-- 도서 상세 (SCR-11) -->
+    <string name="book_label_author">저자</string>
+    <string name="book_label_publisher">출판사</string>
+    <string name="book_label_pub_date">출판일</string>
+    <string name="book_label_isbn">ISBN</string>
+    <string name="book_label_category">분류</string>
+    <string name="book_label_location">위치</string>
+    <string name="book_label_qty">수량</string>
+    <string name="book_delete_confirm_title">도서 삭제</string>
+    <string name="book_delete_confirm_message">이 도서를 삭제(폐기)하시겠습니까?</string>
+    <string name="book_delete_has_loans">대출 중인 사본이 있어 삭제할 수 없습니다.</string>
+
+    <!-- 도서 등록/수정 (SCR-05) -->
+    <string name="book_edit_title_new">도서 등록</string>
+    <string name="book_edit_title_edit">도서 수정</string>
+    <string name="book_field_isbn">ISBN (선택)</string>
+    <string name="book_field_title">제목</string>
+    <string name="book_field_author">저자 (선택)</string>
+    <string name="book_field_publisher">출판사 (선택)</string>
+    <string name="book_field_pub_date">출판일 (선택)</string>
+    <string name="book_field_category">분류 (선택)</string>
+    <string name="book_field_location">위치 (선택)</string>
+    <string name="book_field_quantity">수량</string>
+    <string name="book_save">저장</string>
+    <string name="book_error_title_blank">제목을 입력하세요.</string>
+    <string name="book_error_title_too_long">제목은 200자 이하여야 합니다.</string>
+    <string name="book_error_qty">수량은 1 이상의 숫자여야 합니다.</string>
+    <string name="book_error_qty_too_large">수량은 9999 이하여야 합니다.</string>
+    <string name="book_error_qty_below_loaned">대출 중 수량(%1$d)보다 작게 설정할 수 없습니다.</string>
+    <string name="book_error_isbn">ISBN은 하이픈을 제외한 13자리 숫자여야 합니다.</string>
+    <string name="book_error_isbn_checksum">유효하지 않은 ISBN입니다. (체크섬 오류)</string>
+    <string name="book_error_pub_date">출판일은 YYYY-MM-DD 형식이어야 합니다.</string>
+    <string name="book_error_pub_date_invalid">존재하지 않는 날짜입니다.</string>
+    <string name="book_error_text_too_long">100자 이하여야 합니다.</string>
+    <string name="book_dup_title">이미 보유 중인 도서</string>
+    <string name="book_dup_message">\'%1$s\'은(는) 이미 보유 중입니다. 수량을 %2$d권 추가할까요?</string>
 </resources>

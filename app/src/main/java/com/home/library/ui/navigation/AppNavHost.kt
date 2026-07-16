@@ -15,16 +15,16 @@ import com.home.library.session.SessionState
 import com.home.library.ui.auth.changepw.ChangePasswordScreen
 import com.home.library.ui.auth.login.LoginScreen
 import com.home.library.ui.auth.signup.SignUpScreen
-import com.home.library.ui.home.HomeScreen
+import com.home.library.ui.book.detail.BookDetailScreen
+import com.home.library.ui.book.edit.BookEditScreen
+import com.home.library.ui.book.list.BookListScreen
 
 /**
  * 최상위 네비게이션.
- * 로그인/로그아웃 경계는 SessionManager 상태로 구동한다:
- * - 로그인 성공(세션 시작) → HOME (백스택 초기화)
- * - 자동/수동 로그아웃(세션 종료) → LOGIN (백스택 초기화)
- *
- * 전환 판정은 "로그인 여부(boolean)"로만 트리거한다. 활동시각(lastActivityAt) 갱신처럼
- * 세션 내부 값이 바뀌는 경우에는 재이동이 발생하지 않도록 한다.
+ * 앱 메인화면 = 도서 목록(로그인 불필요). 로그인/로그아웃은 세션 상태로 보조 구동한다:
+ * - 로그인 성공(세션 시작) 시 LOGIN/CHANGE_PASSWORD 위에 있으면 도서 목록으로 복귀.
+ * - 로그아웃/세션 만료 시 로그인 필요 화면(도서 편집)에 있으면 도서 목록으로 복귀.
+ *   (요구사항: 만료 시 로그인 화면이 아니라 도서 목록으로 돌아온다.)
  */
 @Composable
 fun AppNavHost(
@@ -36,27 +36,31 @@ fun AppNavHost(
     val isLoggedIn = sessionState is SessionState.LoggedIn
 
     LaunchedEffect(isLoggedIn) {
+        val current = navController.currentDestination?.route
         if (isLoggedIn) {
-            navController.navigate(Routes.HOME) {
-                popUpTo(0) { inclusive = true }
-                launchSingleTop = true
+            if (current == Routes.LOGIN || current == Routes.CHANGE_PASSWORD) {
+                navController.popBackStack(Routes.BOOK_LIST, inclusive = false)
             }
         } else {
-            val current = navController.currentDestination?.route
-            if (current != null && current != Routes.LOGIN) {
-                navController.navigate(Routes.LOGIN) {
-                    popUpTo(0) { inclusive = true }
-                    launchSingleTop = true
-                }
+            // 로그아웃/만료 → 로그인 필요 화면(편집)이면 목록으로 복귀
+            if (current != null && current.startsWith(Routes.BOOK_EDIT_PREFIX)) {
+                navController.popBackStack(Routes.BOOK_LIST, inclusive = false)
             }
         }
     }
 
     NavHost(
         navController = navController,
-        startDestination = Routes.LOGIN,
+        startDestination = Routes.BOOK_LIST,
         modifier = modifier,
     ) {
+        composable(Routes.BOOK_LIST) {
+            BookListScreen(
+                onBookClick = { id -> navController.navigate(Routes.bookDetail(id)) },
+                onAddBook = { navController.navigate(Routes.bookEdit()) },
+                onNavigateLogin = { navController.navigate(Routes.LOGIN) },
+            )
+        }
         composable(Routes.LOGIN) {
             LoginScreen(
                 onNavigateSignUp = { navController.navigate(Routes.SIGNUP) },
@@ -74,8 +78,31 @@ fun AppNavHost(
         ) {
             ChangePasswordScreen()
         }
-        composable(Routes.HOME) {
-            HomeScreen()
+        composable(
+            route = Routes.BOOK_DETAIL,
+            arguments = listOf(
+                navArgument(Routes.BOOK_DETAIL_ARG_ID) { type = NavType.LongType },
+            ),
+        ) {
+            BookDetailScreen(
+                onEdit = { id -> navController.navigate(Routes.bookEdit(id)) },
+                onDeleted = { navController.popBackStack() },
+                onBack = { navController.popBackStack() },
+            )
+        }
+        composable(
+            route = Routes.BOOK_EDIT,
+            arguments = listOf(
+                navArgument(Routes.BOOK_EDIT_ARG_ID) {
+                    type = NavType.LongType
+                    defaultValue = Routes.BOOK_EDIT_NEW_ID
+                },
+            ),
+        ) {
+            BookEditScreen(
+                onDone = { navController.popBackStack() },
+                onBack = { navController.popBackStack() },
+            )
         }
     }
 }

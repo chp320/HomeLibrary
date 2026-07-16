@@ -107,9 +107,11 @@
 ### 3단계 — 도서 CRUD + 검색
 
 - 커버 요건: BOOK-001, BOOK-004~008, SCR-04, SCR-05, SCR-11
-- BookRepository(등록/수정/논리삭제/검색), 중복 ISBN 시 수량 증가, 삭제 전 대출중 검증
-- 관리자 권한 가드, 표지 이미지 로딩(Coil)
-- DoD: 30건 등록 후 부분검색 / 동일 ISBN 재등록 시 수량 증가 / 일반 사용자 등록·수정 차단 / 삭제 시 DISCARDED 논리삭제
+- BookRepository(등록/수정/논리삭제/검색), 중복 ISBN 시 수량 증가(확인 다이얼로그 필수), 삭제 전 대출중 검증
+- 검색(BOOK-07): 제목·저자·출판사·ISBN 부분일치 + 분류 필터 + 대출가능 필터, 입력 디바운스 300ms. `BookDao.search`를 Flow 반환으로 확장.
+- **접근 모델**: 앱 메인화면 = 도서 목록(start destination). 목록/검색/상세는 비로그인 포함 누구나 접근. 로그인 요구는 5단계 대출/반납부터. 상단바에서 로그인/로그아웃. 세션 만료 시 로그인 화면이 아니라 도서 목록으로 복귀.
+- 권한 가드: 등록/수정/삭제(FAB 포함)는 관리자만. UI 숨김 + ViewModel 거부 이중 방어. 표지는 placeholder만(Coil은 4단계).
+- DoD: 30건 등록 후 부분검색 / 동일 ISBN 재등록 시 확인 후 수량 증가 / 일반 사용자·비로그인 등록·수정 차단 / 삭제 시 DISCARDED 논리삭제
 
 ### 4단계 — 바코드 스캔(이중 지원) + ISBN API 연동
 
@@ -121,6 +123,7 @@
   - **스캐너가 연결되지 않은 환경에서도 카메라로 동작**해야 한다. 스캐너 연결 여부를 감지하거나, 사용자가 입력 방식을 선택할 수 있게 한다.
 - 카카오 API: `GET /v3/search/book?target=isbn&query={isbn}&size=1`, 헤더 `Authorization: KakaoAK {key}`, 타임아웃 연결3s/읽기5s, 재시도 1회
 - 동일 ISBN 중복 응답 대비 `documents[0]`만 사용. 결과 0건/401/429 → 수동 입력 폼 전환
+- 표지 이미지 로딩(Coil) + INTERNET 권한 추가(3단계에서 이관). API로 채워진 cover_url을 목록/상세에서 표시.
 - DoD: 하드웨어 스캐너로 ISBN 입력→자동채움 / 카메라로 촬영 인식→자동채움 / 스캐너 미연결 시 카메라 동작 / 오프라인 시 수동 폼 전환 / 보유 도서 스캔 시 수량 증가
 
 ### 5단계 — 대출/반납/연체
@@ -200,7 +203,20 @@ _최종 갱신: 2026-07-17_
 - 빌드 검증: `./gradlew :app:assembleDebug` **BUILD SUCCESSFUL**.
 - 실기기 검증(태블릿 Android 14, 무선 디버깅): 가입/로그인, 5분 자동 로그아웃, 5회 실패 잠금, admin 최초 로그인 비밀번호 강제 변경 정상. Database Inspector로 시드(admin 1건·BCrypt 해시, app_config 7건) 확인. DoD 전부 통과.
 
-### ⏭️ 다음: 3단계 — 도서 CRUD + 검색 착수 예정
+### ✅ 3단계 — 도서 CRUD + 검색 (완료)
 
 - 커버 요건: BOOK-001, BOOK-004~008, SCR-04, SCR-05, SCR-11.
-- 착수 시 계획(파일 목록/화면 흐름/신규 의존성)을 먼저 제시하고 확인받는다.
+- 데이터: `BookDao` 확장 — `search`(제목·저자·출판사·ISBN 부분일치 + 분류/대출가능 필터, **Flow** 반환), `getFlowById`, `getCategories`, `discard`, `addQuantity`. DAO 메서드 추가라 스키마 불변(마이그레이션 없음).
+- 도메인: `BookRepository`(등록/중복수량/수정/논리삭제/검색) + `BookForm`, `BookFormValidator`.
+- 검증(도메인 계층, 4단계 API와 공용): 제목 공백불가·200자 / 수량 1~9999 / **ISBN 하이픈제거 후 13자리+EAN-13 체크디지트** / **출판일 YYYY-MM-DD + LocalDate STRICT 실존검증** / 선택필드 100자. ISBN은 저장·중복조회 모두 `normalizeIsbn` 정규화(수기 하이픈 ↔ 스캔값 매칭).
+- UI: `BookListScreen`(검색 **300ms 디바운스** + 분류/대출가능 필터칩 + 상단바 로그인·로그아웃 + 관리자 FAB), `BookDetailScreen`(관리자 수정/삭제, 대출중 삭제 차단), `BookEditScreen`(등록·수정 공용, ISBN 중복 시 확인 다이얼로그 후 수량만 증가). 각 ViewModel(Hilt).
+- **접근 모델 변경**: 도서 목록 = start destination(비로그인 포함 누구나). 로그인/로그아웃은 상단바. 세션 만료 시 로그인 화면이 아니라 도서 목록으로 복귀. 로그인 요구는 5단계부터. `HomeScreen`/`HomeViewModel`(2단계 임시) 제거.
+- 권한 가드: 등록/수정/삭제·FAB는 관리자만(UI 숨김 + ViewModel 거부 이중 방어).
+- 신규 의존성 없음(Coil은 4단계로 이관, 표지는 미표시).
+- 빌드 검증: `./gradlew :app:assembleDebug` **BUILD SUCCESSFUL**.
+- 실기기 검증(태블릿 Android 14): 30건 등록·부분검색, 분류/대출가능 필터, 동일 ISBN 재등록 확인 다이얼로그 후 수량증가, ISBN 없는 책 개별 유지, 일반/비로그인 조회전용, 논리삭제(DISCARDED), 세션 만료 시 목록 복귀. 검증 강화(pub_date/ISBN/길이·수량 상한)까지 DoD 전부 통과.
+
+### ⏭️ 다음: 4단계 — 바코드 스캔(이중 지원) + ISBN API 착수 예정
+
+- 커버 요건: BOOK-002, BOOK-003, CMN-001, CMN-002, SCR-06.
+- 착수 시 계획(이중 입력 구조/신규 의존성/API 키 시점)을 먼저 제시하고 확인받는다.
