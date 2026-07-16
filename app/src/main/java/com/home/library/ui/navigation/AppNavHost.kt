@@ -18,6 +18,7 @@ import com.home.library.ui.auth.signup.SignUpScreen
 import com.home.library.ui.book.detail.BookDetailScreen
 import com.home.library.ui.book.edit.BookEditScreen
 import com.home.library.ui.book.list.BookListScreen
+import com.home.library.ui.scan.ScanScreen
 
 /**
  * 최상위 네비게이션.
@@ -42,8 +43,10 @@ fun AppNavHost(
                 navController.popBackStack(Routes.BOOK_LIST, inclusive = false)
             }
         } else {
-            // 로그아웃/만료 → 로그인 필요 화면(편집)이면 목록으로 복귀
-            if (current != null && current.startsWith(Routes.BOOK_EDIT_PREFIX)) {
+            // 로그아웃/만료 → 로그인 필요 화면(스캔/편집)이면 목록으로 복귀
+            if (current != null &&
+                (current == Routes.SCAN || current.startsWith(Routes.BOOK_EDIT_PREFIX))
+            ) {
                 navController.popBackStack(Routes.BOOK_LIST, inclusive = false)
             }
         }
@@ -58,7 +61,16 @@ fun AppNavHost(
             BookListScreen(
                 onBookClick = { id -> navController.navigate(Routes.bookDetail(id)) },
                 onAddBook = { navController.navigate(Routes.bookEdit()) },
+                onNavigateScan = { navController.navigate(Routes.SCAN) },
                 onNavigateLogin = { navController.navigate(Routes.LOGIN) },
+            )
+        }
+        composable(Routes.SCAN) {
+            ScanScreen(
+                onIsbn = { isbn ->
+                    navController.navigate(Routes.bookEdit(isbn = isbn))
+                },
+                onBack = { navController.popBackStack() },
             )
         }
         composable(Routes.LOGIN) {
@@ -96,6 +108,10 @@ fun AppNavHost(
                 navArgument(Routes.BOOK_EDIT_ARG_ID) {
                     type = NavType.LongType
                     defaultValue = Routes.BOOK_EDIT_NEW_ID
+                },
+                navArgument(Routes.BOOK_EDIT_ARG_ISBN) {
+                    type = NavType.StringType
+                    defaultValue = ""
                 },
             ),
         ) {

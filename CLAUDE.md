@@ -216,7 +216,21 @@ _최종 갱신: 2026-07-17_
 - 빌드 검증: `./gradlew :app:assembleDebug` **BUILD SUCCESSFUL**.
 - 실기기 검증(태블릿 Android 14): 30건 등록·부분검색, 분류/대출가능 필터, 동일 ISBN 재등록 확인 다이얼로그 후 수량증가, ISBN 없는 책 개별 유지, 일반/비로그인 조회전용, 논리삭제(DISCARDED), 세션 만료 시 목록 복귀. 검증 강화(pub_date/ISBN/길이·수량 상한)까지 DoD 전부 통과.
 
-### ⏭️ 다음: 4단계 — 바코드 스캔(이중 지원) + ISBN API 착수 예정
+### ✅ 4단계 — 바코드 스캔(이중 지원) + ISBN API (완료, 단 HID 스캐너 실물 테스트 보류)
 
 - 커버 요건: BOOK-002, BOOK-003, CMN-001, CMN-002, SCR-06.
-- 착수 시 계획(이중 입력 구조/신규 의존성/API 키 시점)을 먼저 제시하고 확인받는다.
+- 이중 입력 수렴: HID 스캐너·수동 키보드·카메라 3소스를 `ScanViewModel.dispatch()` 한 곳으로 수렴 → 정규화+13자리+체크디지트 통과분만 방출. ISBN 필드는 `singleLine`+`ImeAction.Done`+개행감지+조회버튼 3중 커버, 하이픈 허용(Number 미제한), 처리 후 비우기+재포커스(연속 스캔).
+- 스캔 진입: 도서 목록 상단바 "스캔 등록"(관리자만). `MainActivity.dispatchKeyEvent`는 `super` 반환이라 스캐너 키 입력이 필드에 도달(소비 안 함).
+- 네트워크: `KakaoBookApi`+DTO+`KakaoBookMapper`(datetime ISO8601→YYYY-MM-DD, ISBN10/13 공백구분 중 13자리 선택, author 배열 join)+`NetworkModule`(연결3s/읽기5s, `Authorization: KakaoAK` 인터셉터 주입)+`BookLookupRepository`(재시도1회, 0건/401/429/네트워크 분기).
+- 파이프라인 단일화: `BookEditViewModel`이 `isbn` 인자로 로컬조회→API 실행. 로컬 존재 시 3단계 중복 다이얼로그 재사용(스캔은 +1 고정, 현재수량 표시), 미존재 시 API 자동채움, 실패 시 ISBN만 채운 수동 폼+안내. `addQuantity`에 9999 상한. 관리자 가드 재확인(인자 경로 우회 차단). API는 `viewModelScope`라 이탈 시 취소.
+- 신규 의존성: CameraX 1.3.4, ML Kit barcode-scanning 17.3.0(번들·오프라인), Retrofit+converter-moshi 2.11.0, Moshi 1.15.1(KSP codegen), Coil 2.7.0(표지), okhttp logging-interceptor 4.12.0. 권한: `INTERNET`, `CAMERA`(선택 기능). `buildConfig=true`.
+- API 키: `local.properties`의 `KAKAO_REST_API_KEY`(gitignore) → `BuildConfig`로 주입. 키 없으면 빈 문자열(빌드는 통과, 런타임 401). **키 변경 시 재빌드 필요.**
+- 진단: OkHttp `HttpLoggingInterceptor`는 **debug 빌드 전용**(`if(BuildConfig.DEBUG)`) + `redactHeader("Authorization")`로 키 마스킹. catch 블록 예외는 로그화(무음 삼킴 제거).
+- 빌드 검증: `./gradlew :app:assembleDebug` **BUILD SUCCESSFUL**.
+- 실기기 검증(태블릿 Android 14): 수동 입력, 카메라 EAN-13 스캔, 오프라인 폴백, 보유도서 +1 수량증가 통과.
+- **⚠️ 미완(보류): USB-C HID 하드웨어 스캐너 실물 테스트.** 스캐너 미확보로 물리 스캔 경로만 미검증. 배선(자동포커스 필드가 HID 키입력 수신)은 코드상 완료. 스캐너 확보 시 실물 검증 필요.
+
+### ⏭️ 다음: 5단계 — 대출/반납/연체 착수 예정
+
+- 커버 요건: LOAN-001~003, LOAN-006, SCR-07, SCR-08.
+- 착수 시 계획(정책/검증/트랜잭션/OverdueUpdater/자동로그아웃 유예/바코드 재사용)을 먼저 제시하고 확인받는다.

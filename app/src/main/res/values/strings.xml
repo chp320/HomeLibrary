@@ -97,4 +97,23 @@
     <string name="book_error_text_too_long">100자 이하여야 합니다.</string>
     <string name="book_dup_title">이미 보유 중인 도서</string>
     <string name="book_dup_message">\'%1$s\'은(는) 이미 보유 중입니다. 수량을 %2$d권 추가할까요?</string>
+    <string name="book_dup_scan_message">『%1$s』을(를) 이미 보유 중입니다. 1권 추가할까요? (현재 %2$d권)</string>
+    <string name="book_error_qty_add_exceeds">수량 상한(%1$d)을 초과하여 추가할 수 없습니다.</string>
+
+    <!-- 스캔 → API 조회 (4단계) -->
+    <string name="book_scan_register">스캔 등록</string>
+    <string name="book_lookup_loading">도서 정보를 조회 중…</string>
+    <string name="book_lookup_not_found">도서 정보를 찾지 못했습니다. 직접 입력하세요.</string>
+    <string name="book_lookup_auth_error">API 인증 오류입니다. 직접 입력하세요.</string>
+    <string name="book_lookup_rate_limited">요청 한도를 초과했습니다. 잠시 후 다시 시도하거나 직접 입력하세요.</string>
+    <string name="book_lookup_network_error">네트워크 오류입니다. 직접 입력하세요.</string>
+
+    <!-- 바코드 스캔 화면 (SCR-06) -->
+    <string name="scan_title">바코드 스캔</string>
+    <string name="scan_hint">USB 스캐너로 바코드를 읽거나, ISBN을 직접 입력하거나, 카메라로 촬영하세요.</string>
+    <string name="scan_field_isbn">ISBN (스캐너 / 직접 입력)</string>
+    <string name="scan_lookup">조회</string>
+    <string name="scan_use_camera">카메라로 스캔</string>
+    <string name="scan_close_camera">카메라 닫기</string>
+    <string name="scan_error_invalid_isbn">올바른 ISBN이 아닙니다. (13자리 숫자)</string>
 </resources>

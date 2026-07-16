@@ -1,3 +1,6 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -5,6 +8,13 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt.android)
 }
+
+// 카카오 REST API 키를 local.properties → BuildConfig로 주입(하드코딩 금지, 설계 원칙 8).
+// 키가 없어도 빈 문자열로 주입되어 빌드는 깨지지 않는다(런타임 API 호출 시에만 필요).
+val kakaoRestApiKey: String = Properties().apply {
+    val f = rootProject.file("local.properties")
+    if (f.exists()) FileInputStream(f).use { load(it) }
+}.getProperty("KAKAO_REST_API_KEY", "")
 
 android {
     namespace = "com.home.library"
@@ -22,6 +32,8 @@ android {
         ksp {
             arg("room.schemaLocation", "$projectDir/schemas")
         }
+
+        buildConfigField("String", "KAKAO_REST_API_KEY", "\"$kakaoRestApiKey\"")
     }
 
     buildTypes {
@@ -42,6 +54,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -69,6 +82,23 @@ dependencies {
 
     // BCrypt
     implementation(libs.bcrypt)
+
+    // CameraX + ML Kit 바코드(번들, 오프라인)
+    implementation(libs.androidx.camera.core)
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.lifecycle)
+    implementation(libs.androidx.camera.view)
+    implementation(libs.mlkit.barcode.scanning)
+
+    // 네트워크: Retrofit + Moshi
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.converter.moshi)
+    implementation(libs.okhttp.logging.interceptor)
+    implementation(libs.moshi)
+    ksp(libs.moshi.kotlin.codegen)
+
+    // 이미지 로딩
+    implementation(libs.coil.compose)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

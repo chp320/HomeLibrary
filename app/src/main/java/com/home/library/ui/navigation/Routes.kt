@@ -8,16 +8,25 @@ object Routes {
     const val LOGIN = "login"
     const val SIGNUP = "signup"
 
+    /** 바코드 스캔(SCR-06). 관리자 전용 진입. */
+    const val SCAN = "scan"
+
     const val BOOK_DETAIL_ARG_ID = "bookId"
     const val BOOK_DETAIL = "bookDetail/{$BOOK_DETAIL_ARG_ID}"
     fun bookDetail(bookId: Long): String = "bookDetail/$bookId"
 
-    /** 등록/수정 공용 폼. bookId 미지정(-1)=등록, 지정=수정. */
+    /**
+     * 등록/수정 공용 폼.
+     * - bookId 미지정(-1)=등록, 지정=수정.
+     * - isbn 지정=스캔 경로(로컬조회→API 자동채움).
+     */
     const val BOOK_EDIT_ARG_ID = "bookId"
+    const val BOOK_EDIT_ARG_ISBN = "isbn"
     const val BOOK_EDIT_NEW_ID = -1L
-    const val BOOK_EDIT = "bookEdit?bookId={$BOOK_EDIT_ARG_ID}"
+    const val BOOK_EDIT = "bookEdit?bookId={$BOOK_EDIT_ARG_ID}&isbn={$BOOK_EDIT_ARG_ISBN}"
     const val BOOK_EDIT_PREFIX = "bookEdit"
-    fun bookEdit(bookId: Long = BOOK_EDIT_NEW_ID): String = "bookEdit?bookId=$bookId"
+    fun bookEdit(bookId: Long = BOOK_EDIT_NEW_ID, isbn: String? = null): String =
+        "bookEdit?bookId=$bookId&isbn=${isbn.orEmpty()}"
 
     const val CHANGE_PASSWORD_ARG_USER_ID = "userId"
     const val CHANGE_PASSWORD = "changePassword/{$CHANGE_PASSWORD_ARG_USER_ID}"

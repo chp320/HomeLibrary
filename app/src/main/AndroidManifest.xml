@@ -2,6 +2,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <!-- 카메라는 선택 기능(스캐너/수동 입력 대체 가능) → 카메라 없는 기기에도 설치 허용 -->
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+
     <application
         android:name=".HomeLibraryApp"
         android:allowBackup="true"

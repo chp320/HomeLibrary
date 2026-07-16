@@ -44,9 +44,17 @@ class BookRepository @Inject constructor(
         return bookDao.insert(form.toNewEntity(now))
     }
 
-    /** 중복 ISBN 재등록 → 수량만 증가(서지정보는 수정 화면에서만 변경). */
-    suspend fun addQuantity(bookId: Long, qty: Int) {
+    /**
+     * 중복 ISBN 재등록/보유도서 스캔 → 수량만 증가(서지정보는 수정 화면에서만 변경).
+     * 총 수량이 상한(9999)을 넘으면 거부한다.
+     */
+    suspend fun addQuantity(bookId: Long, qty: Int): AddQuantityResult {
+        val existing = bookDao.getById(bookId) ?: return AddQuantityResult.NotFound
+        if (existing.totalQty + qty > BookFormValidator.QTY_MAX) {
+            return AddQuantityResult.ExceedsMax(BookFormValidator.QTY_MAX)
+        }
         bookDao.addQuantity(bookId, qty, System.currentTimeMillis())
+        return AddQuantityResult.Success
     }
 
     /**
@@ -87,7 +95,7 @@ class BookRepository @Inject constructor(
         author = author.blankToNull(),
         publisher = publisher.blankToNull(),
         pubDate = pubDate.blankToNull(),
-        coverUrl = null, // 3단계: 표지 없음(Coil은 4단계)
+        coverUrl = coverUrl.blankToNull(), // API 자동채움 시 표지 URL 저장(수기 입력이면 null)
         category = category.blankToNull(),
         location = location.blankToNull(),
         totalQty = totalQty,
@@ -110,7 +118,15 @@ data class BookForm(
     val category: String?,
     val location: String?,
     val totalQty: Int,
+    /** API 자동채움 시에만 채워지는 표지 URL. 수기 입력은 null. */
+    val coverUrl: String? = null,
 )
+
+sealed interface AddQuantityResult {
+    data object Success : AddQuantityResult
+    data class ExceedsMax(val max: Int) : AddQuantityResult
+    data object NotFound : AddQuantityResult
+}
 
 sealed interface UpdateResult {
     data object Success : UpdateResult

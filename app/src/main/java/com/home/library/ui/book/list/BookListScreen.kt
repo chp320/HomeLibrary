@@ -35,6 +35,7 @@ import com.home.library.data.local.entity.BookEntity
 fun BookListScreen(
     onBookClick: (Long) -> Unit,
     onAddBook: () -> Unit,
+    onNavigateScan: () -> Unit,
     onNavigateLogin: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: BookListViewModel = hiltViewModel(),
@@ -47,6 +48,11 @@ fun BookListScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.book_list_title)) },
                 actions = {
+                    if (state.isAdmin) {
+                        TextButton(onClick = onNavigateScan) {
+                            Text(stringResource(R.string.book_scan_register))
+                        }
+                    }
                     if (state.isLoggedIn) {
                         TextButton(onClick = viewModel::logout) {
                             Text(stringResource(R.string.common_logout))
