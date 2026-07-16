@@ -10,7 +10,8 @@ import java.time.format.DateTimeParseException
  *
  * - 제목: 공백 불가, 200자 이하.
  * - 수량: 정수, 1~9999.
- * - ISBN: 선택. 입력 시 하이픈/공백 제거 후 13자리 숫자 + EAN-13 체크디지트.
+ * - ISBN: 선택. 하이픈/공백 제거 후 10자리(ISBN-10) 또는 13자리(ISBN-13) 허용.
+ *   유효한 ISBN-10은 ISBN-13으로 변환해 저장한다(DB엔 항상 13자리 → 스캔·중복판정 일관).
  * - 출판일: 선택. 입력 시 YYYY-MM-DD 형식 + 실존 날짜.
  * - 저자/출판사/분류/위치: 선택, 100자 이하.
  */
@@ -42,12 +43,28 @@ object BookFormValidator {
     /** 검증 통과를 전제로 수량 정수를 반환. 범위 밖이면 null. */
     fun parseQuantity(value: String): Int? = value.trim().toIntOrNull()?.takeIf { it in QTY_MIN..QTY_MAX }
 
-    /** 하이픈/공백 제거 + 정규화. blank면 null(=ISBN 없음). */
-    fun normalizeIsbn(raw: String?): String? =
+    /** 하이픈/공백 제거만(변환·검증 없음). blank면 null. */
+    private fun stripIsbn(raw: String?): String? =
         raw?.replace("-", "")?.replace(" ", "")?.trim()?.ifBlank { null }
 
+    /**
+     * 저장/조회용 정규화. blank면 null(=ISBN 없음).
+     * 유효한 ISBN-10은 ISBN-13으로 변환한다. 그 외(13자리, 변환 불가한 값)는 그대로 반환.
+     */
+    fun normalizeIsbn(raw: String?): String? {
+        val cleaned = stripIsbn(raw) ?: return null
+        if (cleaned.length == 10) {
+            isbn10ToIsbn13(cleaned)?.let { return it }
+        }
+        return cleaned
+    }
+
     fun validateIsbn(raw: String?): IsbnError? {
-        val cleaned = normalizeIsbn(raw) ?: return null // 빈 값 허용
+        val cleaned = stripIsbn(raw) ?: return null // 빈 값 허용
+        // 10자리는 ISBN-10로 간주(마지막 자리 X 가능) → all(isDigit)로 거르지 않는다.
+        if (cleaned.length == 10) {
+            return if (isValidIsbn10(cleaned)) null else IsbnError.ISBN10_CHECKSUM
+        }
         if (!ISBN13_REGEX.matches(cleaned)) return IsbnError.FORMAT
         if (!isValidIsbn13Checksum(cleaned)) return IsbnError.CHECKSUM
         return null
@@ -69,20 +86,72 @@ object BookFormValidator {
     fun validateOptionalText(value: String): OptionalTextError? =
         if (value.trim().length > OPTIONAL_TEXT_MAX) OptionalTextError.TOO_LONG else null
 
+    // ── ISBN 계산 ──────────────────────────────────────────────
+
+    /**
+     * ISBN-10 체크디지트 검증 (mod 11).
+     * 앞 9자리는 숫자, 10번째(체크디지트)만 0~9 또는 X(=10) 허용.
+     */
+    fun isValidIsbn10(isbn10: String): Boolean {
+        if (isbn10.length != 10) return false
+        var sum = 0
+        for (i in 0 until 9) {
+            val c = isbn10[i]
+            if (!c.isDigit()) return false
+            sum += (c - '0') * (10 - i)
+        }
+        val last = isbn10[9]
+        val checkValue = when {
+            last == 'X' || last == 'x' -> 10
+            last.isDigit() -> last - '0'
+            else -> return false
+        }
+        sum += checkValue
+        return sum % 11 == 0
+    }
+
+    /** 유효한 ISBN-10을 ISBN-13(978 접두)으로 변환. 유효하지 않으면 null. */
+    fun isbn10ToIsbn13(isbn10: String): String? {
+        if (!isValidIsbn10(isbn10)) return null
+        val core = "978" + isbn10.substring(0, 9) // 체크디지트(X 포함) 버리고 앞 9자리만
+        return core + ean13CheckDigit(core)
+    }
+
+    /**
+     * ISBN-13(978 접두)을 ISBN-10으로 역변환. 979 접두/형식 불일치면 null.
+     * (카카오 ISBN-10 폴백 조회용)
+     */
+    fun isbn13ToIsbn10(isbn13: String): String? {
+        if (isbn13.length != 13 || !isbn13.startsWith("978") || !isbn13.all { it.isDigit() }) return null
+        val core9 = isbn13.substring(3, 12)
+        var sum = 0
+        for (i in 0 until 9) {
+            sum += (core9[i] - '0') * (10 - i)
+        }
+        val c = (11 - (sum % 11)) % 11
+        val checkChar = if (c == 10) 'X' else ('0' + c)
+        return core9 + checkChar
+    }
+
     /** EAN-13(ISBN-13) 체크디지트 검증. 입력은 13자리 숫자 문자열. */
-    private fun isValidIsbn13Checksum(isbn: String): Boolean {
+    private fun isValidIsbn13Checksum(isbn: String): Boolean =
+        isbn.length == 13 && isbn.all { it.isDigit() } &&
+            ean13CheckDigit(isbn.substring(0, 12)) == isbn[12]
+
+    /** 앞 12자리로 EAN-13 체크디지트 계산. */
+    private fun ean13CheckDigit(twelve: String): Char {
         var sum = 0
         for (i in 0 until 12) {
-            val d = isbn[i] - '0'
+            val d = twelve[i] - '0'
             sum += if (i % 2 == 0) d else d * 3
         }
         val check = (10 - (sum % 10)) % 10
-        return check == (isbn[12] - '0')
+        return '0' + check
     }
 }
 
 enum class TitleError { BLANK, TOO_LONG }
 enum class QuantityError { BLANK, INVALID, TOO_SMALL, TOO_LARGE }
-enum class IsbnError { FORMAT, CHECKSUM }
+enum class IsbnError { FORMAT, CHECKSUM, ISBN10_CHECKSUM }
 enum class PubDateError { FORMAT, INVALID }
 enum class OptionalTextError { TOO_LONG }

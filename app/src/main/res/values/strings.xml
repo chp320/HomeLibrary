@@ -90,8 +90,9 @@
     <string name="book_error_qty">수량은 1 이상의 숫자여야 합니다.</string>
     <string name="book_error_qty_too_large">수량은 9999 이하여야 합니다.</string>
     <string name="book_error_qty_below_loaned">대출 중 수량(%1$d)보다 작게 설정할 수 없습니다.</string>
-    <string name="book_error_isbn">ISBN은 하이픈을 제외한 13자리 숫자여야 합니다.</string>
+    <string name="book_error_isbn">ISBN은 10자리 또는 13자리여야 합니다.</string>
     <string name="book_error_isbn_checksum">유효하지 않은 ISBN입니다. (체크섬 오류)</string>
+    <string name="book_error_isbn10_checksum">유효하지 않은 ISBN-10입니다. (체크디지트 오류)</string>
     <string name="book_error_pub_date">출판일은 YYYY-MM-DD 형식이어야 합니다.</string>
     <string name="book_error_pub_date_invalid">존재하지 않는 날짜입니다.</string>
     <string name="book_error_text_too_long">100자 이하여야 합니다.</string>
@@ -115,7 +116,7 @@
     <string name="scan_lookup">조회</string>
     <string name="scan_use_camera">카메라로 스캔</string>
     <string name="scan_close_camera">카메라 닫기</string>
-    <string name="scan_error_invalid_isbn">올바른 ISBN이 아닙니다. (13자리 숫자)</string>
+    <string name="scan_error_invalid_isbn">올바른 ISBN이 아닙니다. (10 또는 13자리)</string>
 
     <!-- 대출 (SCR-07) -->
     <string name="loan_title">대출</string>

@@ -222,6 +222,7 @@ private fun quantityErrorMessage(error: QuantityError?, belowLoaned: Int?): Stri
 private fun isbnErrorMessage(error: IsbnError?): String? = when (error) {
     IsbnError.FORMAT -> stringResource(R.string.book_error_isbn)
     IsbnError.CHECKSUM -> stringResource(R.string.book_error_isbn_checksum)
+    IsbnError.ISBN10_CHECKSUM -> stringResource(R.string.book_error_isbn10_checksum)
     null -> null
 }
 
