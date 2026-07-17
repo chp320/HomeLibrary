@@ -2,6 +2,7 @@ package com.home.library.ui.loan
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -93,6 +94,37 @@ fun LoanScreen(
                     }
                     state.borrowerName?.let {
                         Text(stringResource(R.string.loan_borrower, it))
+                    }
+                    // 대출자의 여력(A-5). 목록 화면과 동일한 LoanAllowance 규칙 → 두 화면이 갈리지 않는다.
+                    state.allowance?.let { allowance ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(
+                                text = stringResource(
+                                    R.string.loan_allowance,
+                                    allowance.availableToBorrow,
+                                    allowance.activeCount,
+                                ),
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                            if (allowance.hasOverdue) {
+                                Text(
+                                    text = stringResource(R.string.loan_allowance_overdue, allowance.overdueCount),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.error,
+                                )
+                            }
+                        }
+                    }
+                    // 반납 예정일 미리보기(A-5). 대출 기간은 AppConfig 값이라 정책 변경이 반영된다.
+                    state.periodDays?.let { days ->
+                        Text(
+                            text = stringResource(
+                                R.string.loan_due_preview,
+                                formatDate(dueDatePreview(days)),
+                                days,
+                            ),
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
                     }
                     MessageArea(state, onRegister)
                     Button(

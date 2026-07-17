@@ -1,5 +1,6 @@
 package com.home.library.data.repository
 
+import com.home.library.auth.AuthValidator
 import com.home.library.data.local.dao.LoanDao
 import com.home.library.data.local.dao.UserDao
 import com.home.library.data.local.entity.UserEntity
@@ -35,10 +36,12 @@ class UserRepository @Inject constructor(
         phone: String?,
         role: UserRole,
     ): CreateUserResult {
-        if (userDao.getByLoginId(loginId) != null) return CreateUserResult.DuplicateLoginId
+        // 중복 검사·저장 모두 정규화된 값으로(AuthRepository.signUp과 동일 규칙).
+        val id = AuthValidator.normalizeLoginId(loginId)
+        if (userDao.getByLoginId(id) != null) return CreateUserResult.DuplicateLoginId
         userDao.insert(
             UserEntity(
-                loginId = loginId,
+                loginId = id,
                 passwordHash = PasswordHasher.hash(password),
                 name = name.trim(),
                 phone = phone?.trim()?.ifBlank { null },

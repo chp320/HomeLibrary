@@ -25,6 +25,9 @@ class BookRepository @Inject constructor(
 
     fun categories(): Flow<List<String>> = bookDao.getCategories()
 
+    /** 보유 도서 총 건수(DISCARDED 제외). 검색·필터와 무관하게 항상 전체를 센다. */
+    fun totalCount(): Flow<Int> = bookDao.countActive()
+
     suspend fun getById(bookId: Long): BookEntity? = bookDao.getById(bookId)
 
     fun flowById(bookId: Long): Flow<BookEntity?> = bookDao.getFlowById(bookId)

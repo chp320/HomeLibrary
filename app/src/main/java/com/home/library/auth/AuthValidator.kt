@@ -17,11 +17,24 @@ object AuthValidator {
 
     private val LOGIN_ID_REGEX = Regex("^[a-z0-9]+$")
 
-    fun validateLoginId(value: String): LoginIdError? = when {
-        value.isBlank() -> LoginIdError.BLANK
-        value.length < LOGIN_ID_MIN || value.length > LOGIN_ID_MAX -> LoginIdError.LENGTH
-        !LOGIN_ID_REGEX.matches(value) -> LoginIdError.FORMAT
-        else -> null
+    /**
+     * 아이디 정규화. 앞뒤 공백 제거.
+     *
+     * 저장·조회·검증이 **모두 같은 값**을 보게 하려고 도메인 계층에 둔다
+     * (ISBN의 [BookFormValidator.normalizeIsbn]과 같은 취지).
+     * 저장 시점 정규화의 최종 책임은 Repository에 있다 — UI를 거치지 않는 호출자도 있기 때문.
+     */
+    fun normalizeLoginId(value: String): String = value.trim()
+
+    /** 정규화 후 검증한다. 붙여넣기로 딸려온 공백 때문에 FORMAT 오류가 나지 않도록. */
+    fun validateLoginId(value: String): LoginIdError? {
+        val v = normalizeLoginId(value)
+        return when {
+            v.isBlank() -> LoginIdError.BLANK
+            v.length < LOGIN_ID_MIN || v.length > LOGIN_ID_MAX -> LoginIdError.LENGTH
+            !LOGIN_ID_REGEX.matches(v) -> LoginIdError.FORMAT
+            else -> null
+        }
     }
 
     fun validatePassword(value: String): PasswordError? = when {

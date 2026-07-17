@@ -33,7 +33,8 @@ class LoginViewModel @Inject constructor(
         if (state.loading || state.loginId.isBlank() || state.password.isBlank()) return
         viewModelScope.launch {
             _ui.update { it.copy(loading = true, error = null) }
-            when (val result = authRepository.login(state.loginId.trim(), state.password)) {
+            // 정규화(trim)는 Repository가 담당한다(저장 시와 동일 규칙으로 조회).
+            when (val result = authRepository.login(state.loginId, state.password)) {
                 is LoginResult.Success -> {
                     if (result.user.pwdChangeRequired) {
                         // 세션은 시작하지 않고 강제 변경 화면으로 유도

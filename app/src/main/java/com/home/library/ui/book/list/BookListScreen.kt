@@ -12,12 +12,15 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -39,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.home.library.R
 import com.home.library.data.local.entity.BookEntity
+import com.home.library.loan.LoanAllowance
 import com.home.library.ui.common.BookCover
 
 /** 상단 메뉴 항목 단일 정의(텍스트/오버플로 분기가 같은 항목·권한을 공유). */
@@ -79,6 +83,7 @@ fun BookListScreen(
             modifier = Modifier.fillMaxSize(),
             topBar = {
                 TopAppBar(
+                    // 건수는 title이 아니라 목록 바로 위에 둔다(BookCountRow 참조).
                     title = { Text(stringResource(R.string.book_list_title)) },
                     actions = {
                         when {
@@ -122,11 +127,29 @@ fun BookListScreen(
                     .padding(innerPadding)
                     .padding(horizontal = 16.dp),
             ) {
+                // 로그인 사용자 정보(A-2). 비로그인이면 숨김. allowance는 조회 전 null.
+                state.userName?.let { name ->
+                    state.allowance?.let { allowance ->
+                        UserInfoRow(name = name, allowance = allowance)
+                    }
+                }
+
                 OutlinedTextField(
                     value = state.query,
                     onValueChange = viewModel::onQueryChange,
                     label = { Text(stringResource(R.string.book_search_hint)) },
                     singleLine = true,
+                    trailingIcon = {
+                        // 입력이 있을 때만 노출. 없을 때 보이면 누를 게 없는 버튼이 된다.
+                        if (state.query.isNotEmpty()) {
+                            IconButton(onClick = { viewModel.onQueryChange("") }) {
+                                Icon(
+                                    imageVector = Icons.Filled.Clear,
+                                    contentDescription = stringResource(R.string.book_search_clear),
+                                )
+                            }
+                        }
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 8.dp),
@@ -161,6 +184,10 @@ fun BookListScreen(
                     }
                 }
 
+                // 건수(A-1). 검색·필터에 따라 바뀌는 목록의 속성이라 목록 바로 위에 둔다.
+                // TopAppBar title에 두면 actions(관리자는 6개)와 폭을 나눠 쓰다 잘린다.
+                BookCountRow(state)
+
                 if (state.books.isEmpty()) {
                     Column(
                         modifier = Modifier.fillMaxSize(),
@@ -183,6 +210,58 @@ fun BookListScreen(
                     }
                 }
             }
+        }
+    }
+}
+
+/**
+ * 도서 건수(A-1). 전체 폭을 쓰므로 관리자 액션이 많아도 잘리지 않는다.
+ * 검색·필터가 걸린 상태에서만 결과 건수를 함께 보여준다 —
+ * 검색 중에 전체 건수만 뜨면 어색하고, 전체 건수가 사라지면 보유량을 알 수 없다.
+ */
+@Composable
+private fun BookCountRow(state: BookListUiState) {
+    Text(
+        text = if (state.isFiltered) {
+            stringResource(R.string.book_list_count_filtered, state.resultCount, state.totalCount)
+        } else {
+            stringResource(R.string.book_list_count, state.totalCount)
+        },
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(bottom = 8.dp),
+    )
+}
+
+/**
+ * 로그인 사용자 정보(A-2).
+ * 연체 보유 시 availableToBorrow가 0이 되므로(LoanAllowance 규칙), 그 이유를 error 색상으로 덧붙인다.
+ * 숫자만 0으로 두면 사용자가 이유를 알 수 없다.
+ */
+@Composable
+private fun UserInfoRow(name: String, allowance: LoanAllowance) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = stringResource(
+                R.string.book_list_user_info,
+                name,
+                allowance.availableToBorrow,
+                allowance.activeCount,
+            ),
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        if (allowance.hasOverdue) {
+            Text(
+                text = stringResource(R.string.book_list_user_overdue, allowance.overdueCount),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.error,
+            )
         }
     }
 }

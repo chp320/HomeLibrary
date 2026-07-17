@@ -101,7 +101,8 @@ class UserEditViewModel @Inject constructor(
                 }
             } else {
                 val result = userRepository.createUser(
-                    loginId = s.loginId.trim(),
+                    // 정규화(trim)는 name/phone과 마찬가지로 Repository가 담당한다.
+                    loginId = s.loginId,
                     password = s.password,
                     name = s.name,
                     phone = s.phone,

@@ -13,6 +13,13 @@ internal const val DAY_MS = 24L * 60 * 60 * 1000
 internal fun formatDate(epochMillis: Long): String =
     Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault()).toLocalDate().toString()
 
+/**
+ * 대출 전 반납 예정일 미리보기(A-5).
+ * LoanRepository.loan()의 계산식(now + periodDays * DAY_MS)과 동일해야 실제 대출 결과와 어긋나지 않는다.
+ */
+internal fun dueDatePreview(periodDays: Long, now: Long = System.currentTimeMillis()): Long =
+    now + periodDays * DAY_MS
+
 /** 반납예정 잔여/연체 표기. */
 @Composable
 internal fun remainingText(dueDate: Long, now: Long, overdue: Boolean): String =

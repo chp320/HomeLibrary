@@ -15,10 +15,13 @@ import com.home.library.data.local.view.ActiveLoanView
 import com.home.library.data.local.view.AdminLoanView
 import com.home.library.data.local.view.BookLoanHistoryView
 import com.home.library.data.local.view.LoanHistoryRecord
+import com.home.library.loan.LoanAllowance
 import com.home.library.loan.LoanCheck
 import com.home.library.loan.LoanPolicy
 import com.home.library.loan.LoanValidator
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -41,6 +44,25 @@ class LoanRepository @Inject constructor(
 
     /** 사용자의 활성 대출 목록(반납 화면 / 내 대출 현황 공용). */
     fun activeLoans(userId: Long): Flow<List<ActiveLoanView>> = loanDao.getActiveLoansByUser(userId)
+
+    /**
+     * 대출 여력(표시용). 도서 목록·대출 확인 화면 공용.
+     *
+     * activeLoans Flow에서 파생하므로 대출/반납 즉시 자동 갱신된다.
+     * overdueCount를 `status == OVERDUE`로 세는 것은 [LoanDao.countOverdueByUser]와 동일한 규칙이라
+     * [LoanValidator]의 판정과 일치한다. (due_date 경과 여부로 세면 검증기와 어긋나므로 쓰지 않는다.)
+     */
+    fun allowance(userId: Long): Flow<LoanAllowance> =
+        loanDao.getActiveLoansByUser(userId).map { loans ->
+            LoanAllowance(
+                activeCount = loans.size,
+                overdueCount = loans.count { it.status == LoanStatus.OVERDUE },
+                maxCount = policy.maxCount(),
+            )
+        }
+
+    /** 대출 기간(일). 대출 확인 화면의 반납 예정일 미리보기용. AppConfig 값이라 정책 변경이 반영된다. */
+    suspend fun loanPeriodDays(): Long = policy.periodDays()
 
     /** 내 대출 이력(도서명·기간 필터 + 페이징). HIST-002. */
     suspend fun userLoanHistory(
@@ -111,6 +133,31 @@ class LoanRepository @Inject constructor(
         ReturnResult.Success
     }
 
+    /**
+     * 일괄 반납(A-11).
+     *
+     * ⚠️ **각 건을 개별 트랜잭션으로 처리한다.** [returnBook]이 건당 `withTransaction`이므로
+     * 여기서 루프만 돌면 요건이 충족된다. 이 루프를 `db.withTransaction`으로 감싸면
+     * 1건 실패에 **전부 롤백**되어 요건이 깨진다 — 절대 감싸지 말 것.
+     *
+     * 예외도 건별로 격리한다. 한 건이 터져도 나머지는 계속 진행하고,
+     * 이미 커밋된 앞선 성공 건은 그대로 살아남는다.
+     *
+     * @return 입력 순서대로의 (loanId, 결과). 호출자가 성공/실패를 집계한다.
+     */
+    suspend fun returnBooks(loanIds: List<Long>, actorId: Long): List<ReturnOutcome> =
+        loanIds.map { loanId ->
+            val result = try {
+                returnBook(loanId, actorId)
+            } catch (e: CancellationException) {
+                throw e // 코루틴 취소는 삼키지 않는다
+            } catch (e: Exception) {
+                Log.w(TAG, "returnBooks: loanId=$loanId 반납 실패 — 나머지 건은 계속 진행", e)
+                ReturnResult.Failed
+            }
+            ReturnOutcome(loanId, result)
+        }
+
     companion object {
         private const val DAY_MS = 24L * 60 * 60 * 1000
         private const val TAG = "HomeLib"
@@ -130,4 +177,10 @@ sealed interface ReturnResult {
     data object Success : ReturnResult
     data object NotFound : ReturnResult
     data object AlreadyReturned : ReturnResult
+
+    /** 예기치 못한 실패(예외). 일괄 반납에서 건별 격리 결과로만 쓰인다. */
+    data object Failed : ReturnResult
 }
+
+/** 일괄 반납의 건별 결과. */
+data class ReturnOutcome(val loanId: Long, val result: ReturnResult)

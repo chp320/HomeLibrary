@@ -117,14 +117,31 @@ fun BookDetailScreen(
                 stringResource(R.string.book_available_count, book.availableQty, book.totalQty),
             )
 
-            // 대출하기: 누구에게나 보임(비로그인은 대출 화면에서 로그인 유도). 폐기/분실 도서는 숨김.
+            // 대출 버튼(A-5): 누구에게나 보임(비로그인은 대출 화면에서 로그인 유도). 폐기/분실 도서는 숨김.
+            // 3분기 — 본인 대출 중 / 가용 0(타인 대출) / 대출 가능.
+            // "대출 중"과 "대출 불가"를 구분해야 사용자가 자기 상태인지 남의 상태인지 안다.
             if (book.status == BookStatus.AVAILABLE) {
-                Button(
-                    onClick = { onLoan(book.bookId) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 16.dp),
-                ) { Text(stringResource(R.string.loan_button)) }
+                val loanModifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp)
+                when {
+                    state.isBorrowedByMe -> Button(
+                        onClick = {},
+                        enabled = false,
+                        modifier = loanModifier,
+                    ) { Text(stringResource(R.string.book_loan_state_borrowed)) }
+
+                    book.availableQty <= 0 -> Button(
+                        onClick = {},
+                        enabled = false,
+                        modifier = loanModifier,
+                    ) { Text(stringResource(R.string.book_loan_state_unavailable)) }
+
+                    else -> Button(
+                        onClick = { onLoan(book.bookId) },
+                        modifier = loanModifier,
+                    ) { Text(stringResource(R.string.loan_button)) }
+                }
             }
 
             if (state.isAdmin) {

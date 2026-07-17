@@ -1,5 +1,6 @@
 package com.home.library.data.repository
 
+import com.home.library.auth.AuthValidator
 import com.home.library.data.local.ConfigKeys
 import com.home.library.data.local.dao.AppConfigDao
 import com.home.library.data.local.dao.UserDao
@@ -29,10 +30,12 @@ class AuthRepository @Inject constructor(
         name: String,
         phone: String?,
     ): SignUpResult {
-        if (userDao.getByLoginId(loginId) != null) return SignUpResult.DuplicateLoginId
+        // 중복 검사·저장 모두 정규화된 값으로. 공백이 섞인 채 저장되면 로그인으로 영영 찾을 수 없다.
+        val id = AuthValidator.normalizeLoginId(loginId)
+        if (userDao.getByLoginId(id) != null) return SignUpResult.DuplicateLoginId
         val now = System.currentTimeMillis()
         val user = UserEntity(
-            loginId = loginId,
+            loginId = id,
             passwordHash = PasswordHasher.hash(password),
             name = name.trim(),
             phone = phone?.trim()?.ifBlank { null },
@@ -57,7 +60,9 @@ class AuthRepository @Inject constructor(
      * 6) pwd_change_required는 결과에 담아 호출자가 라우팅
      */
     suspend fun login(loginId: String, password: String): LoginResult {
-        val user = userDao.getByLoginId(loginId) ?: return LoginResult.InvalidCredentials(null)
+        // 저장 시와 동일하게 정규화해 조회한다(UserDao.getByLoginId는 '=' 비교라 공백을 구분).
+        val user = userDao.getByLoginId(AuthValidator.normalizeLoginId(loginId))
+            ?: return LoginResult.InvalidCredentials(null)
 
         // 2) status 판정
         if (user.status == UserStatus.INACTIVE) return LoginResult.Inactive

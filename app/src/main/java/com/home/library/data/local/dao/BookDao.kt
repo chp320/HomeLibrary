@@ -51,6 +51,10 @@ interface BookDao {
     )
     fun search(keyword: String, category: String?, availableOnly: Int): Flow<List<BookEntity>>
 
+    /** 보유 도서 총 건수(DISCARDED 제외). 목록 헤더용. Flow라 등록/폐기 시 자동 갱신. */
+    @Query("SELECT COUNT(*) FROM books WHERE status != 'DISCARDED'")
+    fun countActive(): Flow<Int>
+
     /** 분류 필터 후보. NULL/빈 값 제외, DISCARDED 제외. */
     @Query(
         """

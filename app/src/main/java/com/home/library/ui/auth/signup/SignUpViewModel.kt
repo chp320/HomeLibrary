@@ -53,7 +53,8 @@ class SignUpViewModel @Inject constructor(
 
         viewModelScope.launch {
             _ui.update { it.copy(loading = true) }
-            when (authRepository.signUp(s.loginId.trim(), s.password, s.name, s.phone)) {
+            // 정규화(trim)는 name/phone과 마찬가지로 Repository가 담당한다.
+            when (authRepository.signUp(s.loginId, s.password, s.name, s.phone)) {
                 is SignUpResult.Success -> _ui.update { it.copy(loading = false, done = true) }
                 SignUpResult.DuplicateLoginId -> _ui.update { it.copy(loading = false, loginIdDuplicate = true) }
             }

@@ -54,11 +54,21 @@
 
     <!-- 도서 목록/검색 (SCR-04) -->
     <string name="book_list_title">도서 목록</string>
+    <!-- 건수(A-1). 목록 바로 위에 표시. 검색·필터 중이면 book_list_count_filtered 사용 -->
+    <string name="book_list_count">전체 %1$d건</string>
+    <string name="book_list_count_filtered">검색 결과 %1$d건 / 전체 %2$d건</string>
+    <string name="book_search_clear">검색어 지우기</string>
+    <!-- 로그인 사용자 정보(A-2). 연체 보유 시 대출 가능은 0으로 표시되고 book_list_user_overdue가 이유를 덧붙인다 -->
+    <string name="book_list_user_info">%1$s님 · 대출 가능 %2$d건 · 대출 중 %3$d건</string>
+    <string name="book_list_user_overdue">· 연체 %1$d건</string>
     <string name="book_search_hint">제목·저자·출판사·ISBN 검색</string>
     <string name="book_filter_available">대출 가능</string>
     <string name="book_filter_all_categories">전체</string>
     <string name="book_available_count">잔여 %1$d권 / 전체 %2$d권</string>
     <string name="book_empty">도서가 없습니다.</string>
+    <!-- 도서 상세 대출 버튼 상태(A-5). 본인 대출 중 vs 가용 0(타인 대출)을 구분한다 -->
+    <string name="book_loan_state_borrowed">대출 중</string>
+    <string name="book_loan_state_unavailable">대출 불가</string>
     <string name="book_add">도서 등록</string>
 
     <!-- 도서 상세 (SCR-11) -->
@@ -123,6 +133,10 @@
     <string name="loan_login_required">대출하려면 로그인이 필요합니다.</string>
     <string name="loan_scan_hint">대출할 도서의 바코드를 스캔하거나 ISBN을 입력하세요.</string>
     <string name="loan_borrower">대출자: %1$s</string>
+    <!-- 대출 확인 화면의 여력 표시(A-5). 도서 목록(book_list_user_*)과 같은 LoanAllowance 계산을 쓴다 -->
+    <string name="loan_allowance">대출 가능 %1$d건 · 대출 중 %2$d건</string>
+    <string name="loan_allowance_overdue">· 연체 %1$d건</string>
+    <string name="loan_due_preview">반납 예정일: %1$s (%2$d일)</string>
     <string name="loan_button">대출하기</string>
     <string name="loan_register">도서 등록</string>
     <string name="loan_msg_not_registered">등록되지 않은 도서입니다.</string>
@@ -141,6 +155,16 @@
     <string name="return_dday">D-%1$d</string>
     <string name="return_dday_today">오늘까지</string>
     <string name="return_overdue">연체 %1$d일</string>
+    <!-- 반납 확인(A-6) -->
+    <string name="return_confirm_title">반납 확인</string>
+    <string name="return_confirm_message">『%1$s』을(를) 반납하시겠습니까?</string>
+    <!-- 일괄 반납(A-11) -->
+    <string name="return_select_all">전체 선택</string>
+    <string name="return_batch_button">선택 반납 (%1$d건)</string>
+    <string name="return_batch_confirm_message">선택한 %1$d건을 반납하시겠습니까?</string>
+    <string name="return_batch_result_success">%1$d건을 반납했습니다.</string>
+    <string name="return_batch_result_partial">%1$d건 성공, %2$d건 실패</string>
+    <string name="return_select_item">%1$s 선택</string>
 
     <!-- 공통 라벨 (역할/상태/대출상태/행위) -->
     <string name="role_admin">관리자</string>
