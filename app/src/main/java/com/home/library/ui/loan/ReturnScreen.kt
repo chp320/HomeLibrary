@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.home.library.R
 import com.home.library.ui.common.BackButton
+import com.home.library.ui.common.HomeButton
 import com.home.library.data.local.enums.LoanStatus
 import com.home.library.data.local.view.ActiveLoanView
 
@@ -44,6 +45,7 @@ import com.home.library.data.local.view.ActiveLoanView
 fun ReturnScreen(
     onNavigateLogin: () -> Unit,
     onBack: () -> Unit,
+    onHome: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ReturnViewModel = hiltViewModel(),
 ) {
@@ -78,6 +80,9 @@ fun ReturnScreen(
                 title = { Text(stringResource(R.string.return_title)) },
                 navigationIcon = {
                     BackButton(onBack)
+                },
+                actions = {
+                    HomeButton(onHome)
                 },
             )
         },

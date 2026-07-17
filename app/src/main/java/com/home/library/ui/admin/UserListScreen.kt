@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.home.library.R
 import com.home.library.ui.common.BackButton
+import com.home.library.ui.common.HomeButton
 import com.home.library.data.local.enums.UserRole
 import com.home.library.data.local.enums.UserStatus
 import com.home.library.data.local.view.UserListItem
@@ -37,6 +38,7 @@ fun UserListScreen(
     onAddUser: () -> Unit,
     onEditUser: (Long) -> Unit,
     onBack: () -> Unit,
+    onHome: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: UserListViewModel = hiltViewModel(),
 ) {
@@ -49,6 +51,9 @@ fun UserListScreen(
                 title = { Text(stringResource(R.string.user_list_title)) },
                 navigationIcon = {
                     BackButton(onBack)
+                },
+                actions = {
+                    HomeButton(onHome)
                 },
             )
         },

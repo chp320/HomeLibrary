@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.home.library.R
 import com.home.library.ui.common.BackButton
+import com.home.library.ui.common.HomeButton
 import com.home.library.data.local.enums.LoanStatus
 import com.home.library.data.local.view.ActiveLoanView
 import com.home.library.data.local.view.LoanHistoryRecord
@@ -51,6 +52,7 @@ fun MyLoanScreen(
     onNavigateReturn: () -> Unit,
     onNavigateLogin: () -> Unit,
     onBack: () -> Unit,
+    onHome: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: MyLoanViewModel = hiltViewModel(),
 ) {
@@ -64,6 +66,9 @@ fun MyLoanScreen(
                 title = { Text(stringResource(R.string.my_loan_title)) },
                 navigationIcon = {
                     BackButton(onBack)
+                },
+                actions = {
+                    HomeButton(onHome)
                 },
             )
         },

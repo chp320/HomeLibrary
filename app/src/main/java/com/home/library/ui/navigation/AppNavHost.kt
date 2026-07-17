@@ -43,6 +43,11 @@ fun AppNavHost(
     val sessionState by sessionManager.state.collectAsState()
     val isLoggedIn = sessionState is SessionState.LoggedIn
 
+    // 홈(도서 목록)으로 점프. 목록은 start destination이라 항상 백스택 맨 아래에 있으므로
+    // 위를 걷어내기만 한다. navigate가 아니라 popBackStack이라 목록이 중복 push되지 않고
+    // 검색어·스크롤 위치가 보존된다(로그아웃/만료 복귀와 동일 관용구).
+    val onHome: () -> Unit = { navController.popBackStack(Routes.BOOK_LIST, inclusive = false) }
+
     LaunchedEffect(isLoggedIn) {
         val current = navController.currentDestination?.route
         if (isLoggedIn) {
@@ -80,6 +85,7 @@ fun AppNavHost(
                 onNavigateReturn = { navController.navigate(Routes.RETURN) },
                 onNavigateLogin = { navController.navigate(Routes.LOGIN) },
                 onBack = { navController.popBackStack() },
+                onHome = onHome,
             )
         }
         composable(Routes.ADMIN_HOME) {
@@ -87,16 +93,18 @@ fun AppNavHost(
                 onNavigateUsers = { navController.navigate(Routes.USER_LIST) },
                 onNavigateLoanStatus = { navController.navigate(Routes.ADMIN_LOAN_STATUS) },
                 onBack = { navController.popBackStack() },
+                onHome = onHome,
             )
         }
         composable(Routes.ADMIN_LOAN_STATUS) {
-            AdminLoanStatusScreen(onBack = { navController.popBackStack() })
+            AdminLoanStatusScreen(onBack = { navController.popBackStack() }, onHome = onHome)
         }
         composable(Routes.USER_LIST) {
             UserListScreen(
                 onAddUser = { navController.navigate(Routes.userEdit()) },
                 onEditUser = { id -> navController.navigate(Routes.userEdit(id)) },
                 onBack = { navController.popBackStack() },
+                onHome = onHome,
             )
         }
         composable(
@@ -111,6 +119,7 @@ fun AppNavHost(
             UserEditScreen(
                 onDone = { navController.popBackStack() },
                 onBack = { navController.popBackStack() },
+                onHome = onHome,
             )
         }
         composable(Routes.SCAN) {
@@ -119,6 +128,7 @@ fun AppNavHost(
                     navController.navigate(Routes.bookEdit(isbn = isbn))
                 },
                 onBack = { navController.popBackStack() },
+                onHome = onHome,
             )
         }
         composable(Routes.LOGIN) {
@@ -149,6 +159,7 @@ fun AppNavHost(
                 onLoan = { id -> navController.navigate(Routes.loan(id)) },
                 onDeleted = { navController.popBackStack() },
                 onBack = { navController.popBackStack() },
+                onHome = onHome,
             )
         }
         composable(
@@ -167,6 +178,7 @@ fun AppNavHost(
             BookEditScreen(
                 onDone = { navController.popBackStack() },
                 onBack = { navController.popBackStack() },
+                onHome = onHome,
             )
         }
         composable(
@@ -183,12 +195,14 @@ fun AppNavHost(
                 onRegister = { isbn -> navController.navigate(Routes.bookEdit(isbn = isbn)) },
                 onLoaned = { navController.popBackStack() },
                 onBack = { navController.popBackStack() },
+                onHome = onHome,
             )
         }
         composable(Routes.RETURN) {
             ReturnScreen(
                 onNavigateLogin = { navController.navigate(Routes.LOGIN) },
                 onBack = { navController.popBackStack() },
+                onHome = onHome,
             )
         }
     }

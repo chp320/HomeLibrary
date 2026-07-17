@@ -15,6 +15,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.home.library.R
 import com.home.library.ui.common.BackButton
+import com.home.library.ui.common.HomeButton
 
 /**
  * 도서 등록용 스캔 화면(SCR-06). ISBN을 받아 등록 화면으로 넘긴다(이후 로컬조회→API는 등록 화면 담당).
@@ -24,6 +25,7 @@ import com.home.library.ui.common.BackButton
 fun ScanScreen(
     onIsbn: (String) -> Unit,
     onBack: () -> Unit,
+    onHome: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -33,6 +35,9 @@ fun ScanScreen(
                 title = { Text(stringResource(R.string.scan_title)) },
                 navigationIcon = {
                     BackButton(onBack)
+                },
+                actions = {
+                    HomeButton(onHome)
                 },
             )
         },

@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.home.library.R
 import com.home.library.ui.common.BackButton
+import com.home.library.ui.common.HomeButton
 import com.home.library.ui.scan.IsbnScanInput
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -35,6 +36,7 @@ fun LoanScreen(
     onRegister: (String) -> Unit,
     onLoaned: () -> Unit,
     onBack: () -> Unit,
+    onHome: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: LoanViewModel = hiltViewModel(),
 ) {
@@ -51,6 +53,9 @@ fun LoanScreen(
                 title = { Text(stringResource(R.string.loan_title)) },
                 navigationIcon = {
                     BackButton(onBack)
+                },
+                actions = {
+                    HomeButton(onHome)
                 },
             )
         },

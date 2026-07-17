@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.home.library.R
 import com.home.library.ui.common.BackButton
+import com.home.library.ui.common.HomeButton
 import com.home.library.ui.common.BookCover
 import com.home.library.data.local.enums.BookStatus
 import com.home.library.data.local.enums.LoanAction
@@ -46,6 +47,7 @@ fun BookDetailScreen(
     onLoan: (Long) -> Unit,
     onDeleted: () -> Unit,
     onBack: () -> Unit,
+    onHome: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: BookDetailViewModel = hiltViewModel(),
 ) {
@@ -75,6 +77,9 @@ fun BookDetailScreen(
                 title = { Text(state.book?.title ?: "") },
                 navigationIcon = {
                     BackButton(onBack)
+                },
+                actions = {
+                    HomeButton(onHome)
                 },
             )
         },

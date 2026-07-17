@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.home.library.R
 import com.home.library.ui.common.BackButton
+import com.home.library.ui.common.HomeButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -27,6 +28,7 @@ fun AdminHomeScreen(
     onNavigateUsers: () -> Unit,
     onNavigateLoanStatus: () -> Unit,
     onBack: () -> Unit,
+    onHome: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: AdminHomeViewModel = hiltViewModel(),
 ) {
@@ -39,6 +41,9 @@ fun AdminHomeScreen(
                 title = { Text(stringResource(R.string.admin_home_title)) },
                 navigationIcon = {
                     BackButton(onBack)
+                },
+                actions = {
+                    HomeButton(onHome)
                 },
             )
         },

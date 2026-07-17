@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.home.library.R
 import com.home.library.ui.common.BackButton
+import com.home.library.ui.common.HomeButton
 import com.home.library.auth.LoginIdError
 import com.home.library.auth.NameError
 import com.home.library.auth.PasswordError
@@ -43,6 +44,7 @@ import com.home.library.data.local.enums.UserStatus
 fun UserEditScreen(
     onDone: () -> Unit,
     onBack: () -> Unit,
+    onHome: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: UserEditViewModel = hiltViewModel(),
 ) {
@@ -59,6 +61,9 @@ fun UserEditScreen(
                 },
                 navigationIcon = {
                     BackButton(onBack)
+                },
+                actions = {
+                    HomeButton(onHome)
                 },
             )
         },

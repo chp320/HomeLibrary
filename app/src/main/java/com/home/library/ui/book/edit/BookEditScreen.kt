@@ -34,6 +34,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.home.library.R
 import com.home.library.ui.common.BackButton
+import com.home.library.ui.common.HomeButton
 import com.home.library.book.IsbnError
 import com.home.library.book.OptionalTextError
 import com.home.library.book.PubDateError
@@ -45,6 +46,7 @@ import com.home.library.book.TitleError
 fun BookEditScreen(
     onDone: () -> Unit,
     onBack: () -> Unit,
+    onHome: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: BookEditViewModel = hiltViewModel(),
 ) {
@@ -67,6 +69,9 @@ fun BookEditScreen(
                 },
                 navigationIcon = {
                     BackButton(onBack)
+                },
+                actions = {
+                    HomeButton(onHome)
                 },
             )
         },
